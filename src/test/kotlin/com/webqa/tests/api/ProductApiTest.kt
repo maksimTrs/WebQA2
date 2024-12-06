@@ -21,7 +21,7 @@ class ProductApiTest : BaseApiTest() {
         productApiClient = ProductApiClient()
 
         // Login to get auth token
-        authToken = authApiClient.login(USER_EMAIL, USER_PASSWORD)
+        authToken = authApiClient.login(userEmail, userPassword)
     }
 
     @Test

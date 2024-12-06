@@ -62,12 +62,12 @@ class SignUpAPITest : BaseApiTest() {
     fun testSignUpWithExistingEmail() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
-            email = USER_EMAIL,
+            email = userEmail,
             password = newPassword,
             passwordConfirm = newPassword
         )
 
         val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
-        assertThat(response.error!!.message).isEqualTo("Email $USER_EMAIL already exists")
+        assertThat(response.error!!.message).isEqualTo("Email $userEmail already exists")
     }
 }

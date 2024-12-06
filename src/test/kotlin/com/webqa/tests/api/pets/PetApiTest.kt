@@ -4,21 +4,22 @@ import com.webqa.api.PetApi
 import com.webqa.model.Category
 import com.webqa.model.Pet
 import com.webqa.model.Tag
+import com.webqa.tests.BaseApiTest
 import io.qameta.allure.Description
 import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
-@Test
-class PetApiTest {
+
+class PetApiTest : BaseApiTest() {
 
     private lateinit var petApi: PetApi
 
 
     @BeforeMethod
     fun setup() {
-        petApi = PetApi("https://petstore3.swagger.io/api/v3")
+        petApi = createPetApi()
     }
 
     @Test

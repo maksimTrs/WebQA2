@@ -36,6 +36,8 @@ dependencies {
     implementation("io.qameta.allure:allure-testng:2.22.2")
     implementation("io.qameta.allure:allure-rest-assured:2.22.2")
     implementation("io.qameta.allure:allure-attachments:2.22.2")
+    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
+    implementation ("io.qameta.allure:allure-okhttp3:2.17.0")
 
     // Data Generation
     implementation("net.datafaker:datafaker:2.0.1")
