@@ -1,0 +1,16 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="All Test Suite" parallel="methods" thread-count="2">
+    <listeners>
+        <listener class-name="com.webqa.core.listeners.TestListener"/>
+    </listeners>
+    <test name="All Tests">
+        <classes>
+            <class name="com.webqa.tests.api.ProductApiTest"/>
+            <class name="com.webqa.tests.api.SignUpAPITest"/>
+            <class name="com.webqa.tests.ui.LoginTest"/>
+            <class name="com.webqa.tests.ui.ProductTest"/>
+            <class name="com.webqa.tests.ui.SignUpUITest"/>
+            <class name="com.webqa.tests.api.pets.PetApiTest"/>
+        </classes>
+    </test>
+</suite>
