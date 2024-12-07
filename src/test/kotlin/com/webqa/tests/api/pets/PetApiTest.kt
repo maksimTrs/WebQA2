@@ -1,13 +1,13 @@
 package com.webqa.tests.api.pets
 
-import com.webqa.api.PetApi
-import com.webqa.model.Category
-import com.webqa.model.Pet
-import com.webqa.model.Tag
+
 import com.webqa.tests.BaseApiTest
 import io.qameta.allure.Description
-import org.assertj.core.api.Assertions
 import org.assertj.core.api.Assertions.assertThat
+import org.openapitools.client.apis.PetApi
+import org.openapitools.client.models.Category
+import org.openapitools.client.models.Pet
+import org.openapitools.client.models.Tag
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
@@ -38,10 +38,10 @@ class PetApiTest : BaseApiTest() {
 
         try {
             val addedPet = petApi.addPet(newPet)
-            Assertions.assertThat(addedPet.id).isNotNull()
-            Assertions.assertThat(addedPet.name).isEqualTo("doggie")
-            Assertions.assertThat(addedPet.category?.name).isEqualTo("Dogs")
-            Assertions.assertThat(addedPet.status).isEqualTo(Pet.Status.available)
+            assertThat(addedPet.id).isNotNull()
+            assertThat(addedPet.name).isEqualTo("doggie")
+            assertThat(addedPet.category?.name).isEqualTo("Dogs")
+            assertThat(addedPet.status).isEqualTo(Pet.Status.available)
         } catch (e: Exception) {
             println("Error details: ${e.message}")
             e.printStackTrace()

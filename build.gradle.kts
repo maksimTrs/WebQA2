@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.9.0"
     id("io.qameta.allure") version "2.11.2"
-    id("org.openapi.generator") version "6.3.0"
+    id("org.openapi.generator") version "7.9.0"
 }
 
 group = "com.webqa"
@@ -53,24 +53,16 @@ dependencies {
     testImplementation("org.slf4j:slf4j-api:2.0.9")
     testImplementation("org.codehaus.janino:janino:3.1.10")
 
-    // OpenAPI Generator
-    implementation("org.openapitools:openapi-generator:6.3.0")
-    implementation("com.squareup.okhttp3:okhttp:4.10.0")
-    implementation("com.squareup.moshi:moshi-kotlin:1.14.0")
-    implementation("com.squareup.moshi:moshi-adapters:1.14.0")
-    testImplementation(kotlin("test"))
-
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.1")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.1")
+    implementation ("com.squareup.moshi:moshi:1.14.0")
+    // For Kotlin support
+    implementation ("com.squareup.moshi:moshi-kotlin:1.14.0")
 }
 
 // OpenAPI Generator configuration
 openApiGenerate {
     generatorName.set("kotlin")
     inputSpec.set("$rootDir/src/main/resources/petstore-openapi.json")
-    outputDir.set("$buildDir/generated")
-    apiPackage.set("com.webqa.api")
-    modelPackage.set("com.webqa.model")
+    outputDir.set("${buildDir}/generate-resources")
 }
 
 tasks.test {
@@ -89,14 +81,14 @@ tasks.test {
 sourceSets {
     main {
         kotlin {
-            srcDir("$buildDir/generated/src/main/kotlin")
+            srcDir("$buildDir/generate-resources/src/main")
         }
     }
-    test {
+/*    test {
         kotlin {
             srcDir("src/test/kotlin")
         }
-    }
+    }*/
 }
 
 
@@ -113,7 +105,7 @@ tasks.withType<KotlinCompile> {
 }
 
 tasks.register<Delete>("cleanOpenApiGenerated") {
-    delete("$buildDir/generated")
+    delete("${buildDir}/generate-resources")
 }
 // ./gradlew openApiGenerate
 

@@ -1,10 +1,10 @@
 package com.webqa.tests
 
-import com.webqa.api.PetApi
 import com.webqa.core.config.Configuration.App
 import io.qameta.allure.okhttp3.AllureOkHttp3
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.openapitools.client.apis.PetApi
 
 abstract class BaseApiTest {
 
