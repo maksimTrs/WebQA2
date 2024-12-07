@@ -13,13 +13,13 @@ import org.openapitools.client.models.Pet
 import org.openapitools.client.models.Tag
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 
 
 class PetApiTest : BaseApiTest() {
 
     private lateinit var petApi: PetApi
-
 
     @BeforeMethod
     fun setup() {
@@ -29,45 +29,24 @@ class PetApiTest : BaseApiTest() {
     @Test
     @Description("Add a new pet to the store")
     fun testAddNewPet() {
-        val category = Category(id = 1, name = "Dogs")
-        val tag = Tag(id = 0, name = "string")
-        val newPet = Pet(
-            id = 10, // You might want to generate this dynamically
-            name = "doggie",
-            category = category,
-            photoUrls = listOf("string"),
-            tags = listOf(tag),
-            status = Pet.Status.available
-        )
+        val newPet = createTestPet()
+        val addedPet = petApi.addPet(newPet)
 
-        try {
-            val addedPet = petApi.addPet(newPet)
-            assertThat(addedPet.id).isNotNull()
-            assertThat(addedPet.name).isEqualTo("doggie")
-            assertThat(addedPet.category?.name).isEqualTo("Dogs")
-            assertThat(addedPet.status).isEqualTo(Pet.Status.available)
-        } catch (e: Exception) {
-            println("Error details: ${e.message}")
-            e.printStackTrace()
-            throw e
-        }
+        assertThat(addedPet.id).isNotNull()
+        assertThat(addedPet.name).isEqualTo(newPet.name)
+        assertThat(addedPet.category?.name).isEqualTo(newPet.category?.name)
+        assertThat(addedPet.status).isEqualTo(newPet.status)
     }
 
     @Test
     @Description("Update an existing pet")
     fun testUpdatePet() {
-        val category = Category(id = 1, name = "Dogs")
-        val tag = Tag(id = 0, name = "string")
-        val newPet = Pet(
-            id = 10, // You might want to generate this dynamically
-            name = "doggie",
-            category = category,
-            photoUrls = listOf("string"),
-            tags = listOf(tag),
-            status = Pet.Status.available
-        )
+        // First, create and add a new pet to the server
+        val originalPet = createTestPet()
+        val addedPet = petApi.addPet(originalPet)
+
         // Now update the pet
-        val updatedPet = newPet.copy(
+        val updatedPet = addedPet.copy(
             name = "Updated Dog",
             status = Pet.Status.sold
         )
@@ -80,13 +59,9 @@ class PetApiTest : BaseApiTest() {
     @Test
     @Description("Find pets by status")
     fun testFindPetsByStatus() {
-        // Arrange
         val status = StatusFindPetsByStatus.sold
-
-        // Act
         val pets = petApi.findPetsByStatus(status)
 
-        // Assert
         assertThat(pets).isNotEmpty()
         assertThat(pets.all { it.status!!.value == status.value }).isTrue()
     }
@@ -94,23 +69,9 @@ class PetApiTest : BaseApiTest() {
     @Test
     @Description("Find pet by ID")
     fun testGetPetById() {
-        // Arrange
-        val category = Category(id = 1, name = "Dogs")
-        val tag = Tag(id = 0, name = "string")
-        val newPet = Pet(
-            id = 10, // You might want to generate this dynamically
-            name = "doggie",
-            category = category,
-            photoUrls = listOf("string"),
-            tags = listOf(tag),
-            status = Pet.Status.available
-        )
-        val addedPet = petApi.addPet(newPet)
-
-        // Act
+        val addedPet = petApi.addPet(createTestPet())
         val retrievedPet = petApi.getPetById(addedPet.id!!)
 
-        // Assert
         assertThat(retrievedPet).isNotNull()
         assertThat(retrievedPet.id).isEqualTo(addedPet.id)
         assertThat(retrievedPet.name).isEqualTo(addedPet.name)
@@ -120,27 +81,24 @@ class PetApiTest : BaseApiTest() {
     @Test
     @Description("Delete a pet")
     fun testDeletePet() {
-        // Arrange
-        val testId = Random.nextInt(1000, 10_000).toLong()
-        val category = Category(id = 1, name = "Dogs")
-        val tag = Tag(id = 0, name = "string")
-        val newPet = Pet(
-            id = testId,
-            name = "doggie",
-            category = category,
-            photoUrls = listOf("string"),
-            tags = listOf(tag),
-            status = Pet.Status.available
-        )
-        val addedPet = petApi.addPet(newPet)
-
-        // Act
+        val testId: Long = Random.nextLong(15_100, 100_000)
+        val addedPet = petApi.addPet(createTestPet(testId))
         petApi.deletePet(addedPet.id!!)
 
-        // Assert
         assertThatThrownBy {
             petApi.getPetById(testId)
         }.isInstanceOf(ClientException::class.java)
             .hasFieldOrPropertyWithValue("statusCode", 404)  // Pet not found
+    }
+
+    private fun createTestPet(id: Long = ThreadLocalRandom.current().nextLong(7000, 13_000)): Pet {
+        return Pet(
+            id = id,
+            name = "PetName$id",
+            category = Category(id = 1, name = "Dogs"),
+            photoUrls = listOf("string"),
+            tags = listOf(Tag(id = 0, name = "testAPITag")),
+            status = Pet.Status.available
+        )
     }
 }
