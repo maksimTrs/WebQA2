@@ -25,19 +25,6 @@
         </encoder>
     </appender>
 
-    <!-- Test Execution Log File -->
-    <appender name="TEST_EXECUTION" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <prudent>true</prudent>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>logs/test-execution-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <maxHistory>7</maxHistory>
-            <totalSizeCap>1GB</totalSizeCap>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} %-5level - %msg%n</pattern>
-        </encoder>
-    </appender>
-
     <!-- Logger for test execution -->
     <logger name="com.webqa.core.listeners.TestListener" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
