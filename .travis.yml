@@ -1,19 +1,26 @@
 language: java
 
+# Define build stages
+stages:
+  - test
+  - report
+  - deploy
+
+# Build matrix for multiple JDK versions
 jdk:
   - openjdk17
 
 # Use a Linux distribution that supports Chrome
 dist: focal
 
-# Enable sudo for Chrome installation
-sudo: required
-
-# Cache Gradle dependencies
+# Cache dependencies and build artifacts
 cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+    - $HOME/.m2/repository/
+    - build/
+  timeout: 1000
 
 # Install Chrome and required dependencies
 addons:
@@ -21,44 +28,95 @@ addons:
   apt:
     packages:
       - chromium-chromedriver
+      - xvfb
+
+env:
+  global:
+    - GRADLE_OPTS="-Xmx4g -Xms1g -Dorg.gradle.daemon=false"
+    - CHROME_OPTIONS="--headless --no-sandbox --disable-dev-shm-usage --disable-gpu --window-size=1920,1080"
 
 before_install:
+  # Set up Chrome
   - export CHROME_BIN=/usr/bin/google-chrome
+  # Set up display for UI tests
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
-  - sleep 5 # give xvfb some time to start
+  - sleep 3
+  # Set up Gradle
   - chmod +x gradlew
+  - ./gradlew --version
 
 install:
-  - ./gradlew assemble
+  - ./gradlew assemble --no-daemon
 
 before_script:
-  - whereis google-chrome-stable
-  - whereis chromedriver
+  # Verify installations
   - google-chrome-stable --version
   - chromedriver --version
+  # Clear previous test results
+  - rm -rf build/allure-results/*
+  - rm -rf build/reports/*
+  - rm -rf build/test-results/*
 
 script:
-  # Run API tests
-  - ./gradlew test --tests "com.webqa.api.*"
-  # Run UI tests
-  - ./gradlew test --tests "com.webqa.ui.*"
-  # Generate Allure Report
+  # Run API tests first (they're usually faster)
+  - travis_wait 30 ./gradlew test --tests "com.webqa.api.*" -Dtest.profile=ci || travis_terminate 1
+  
+  # Run UI tests with Chrome configuration
+  - |
+    travis_wait 40 ./gradlew test --tests "com.webqa.ui.*" \
+    -Dwebdriver.chrome.driver=/usr/local/bin/chromedriver \
+    -Dchrome.options="$CHROME_OPTIONS" \
+    -Dtest.profile=ci || travis_terminate 1
+
+# Define jobs for different stages
+jobs:
+  include:
+    - stage: test
+      name: "Run Tests"
+      script:
+        - travis_wait 30 ./gradlew test --tests "com.webqa.api.*" -Dtest.profile=ci || travis_terminate 1
+        - travis_wait 40 ./gradlew test --tests "com.webqa.ui.*" -Dtest.profile=ci || travis_terminate 1
+    
+    - stage: report
+      name: "Generate Reports"
+      if: branch = master AND type != pull_request
+      script:
+        - ./gradlew allureReport
+    
+    - stage: deploy
+      name: "Deploy Reports"
+      if: branch = master AND type != pull_request AND env(TRAVIS_TEST_RESULT) = 0
+      script:
+        - skip # Deploy is handled by the deploy section
+
+after_success:
+  # Generate Allure report only if tests pass
   - ./gradlew allureReport
 
-after_script:
-  - ./gradlew allureReport
-
-# Store test results and Allure reports
 after_failure:
+  # Archive test results and screenshots
   - if [ -d "build/reports" ]; then tar -czf reports.tar.gz build/reports; fi
   - if [ -d "build/allure-results" ]; then tar -czf allure-results.tar.gz build/allure-results; fi
+  - if [ -d "build/test-results" ]; then tar -czf test-results.tar.gz build/test-results; fi
+  # Print test logs if available
+  - if [ -d "build/reports/tests" ]; then cat build/reports/tests/**/*/test-results.log; fi
 
-# Deploy Allure reports (optional)
+# Deploy Allure reports to GitHub Pages
 deploy:
   provider: pages
-  skip_cleanup: true
-  github_token: $GITHUB_TOKEN
+  strategy: git
+  cleanup: false
+  token: $GITHUB_TOKEN
   local_dir: build/reports/allure-report
+  edge: true # opt in to dpl v2
   on:
     branch: master
+    condition: $TRAVIS_TEST_RESULT = 0  # Deploy only if tests pass
+
+notifications:
+  email:
+    recipients:
+      - ${NOTIFICATION_EMAIL}
+    on_success: change
+    on_failure: always
