@@ -1,51 +1,48 @@
 package com.webqa.tests.api.pets
 
-
 import com.webqa.tests.BaseApiTest
+import com.webqa.tests.api.pets.data.PetTestDataFactory
+import com.webqa.tests.api.pets.verifier.PetVerifier
 import io.qameta.allure.Description
+import io.qameta.allure.Feature
+import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
-import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.openapitools.client.apis.PetApi
 import org.openapitools.client.apis.PetApi.StatusFindPetsByStatus
-import org.openapitools.client.infrastructure.ClientException
-import org.openapitools.client.models.Category
 import org.openapitools.client.models.Pet
-import org.openapitools.client.models.Tag
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
-import java.util.concurrent.ThreadLocalRandom
 import kotlin.random.Random
 
-
+@Feature("Pet Store API")
 class PetApiTest : BaseApiTest() {
 
     private lateinit var petApi: PetApi
+    private lateinit var petVerifier: PetVerifier
 
     @BeforeMethod
     fun setup() {
         petApi = createPetApi()
+        petVerifier = PetVerifier(petApi)
     }
 
     @Test
+    @Story("Pet Management")
     @Description("Add a new pet to the store")
     fun testAddNewPet() {
-        val newPet = createTestPet()
+        val newPet = PetTestDataFactory.createTestPet()
         val addedPet = petApi.addPet(newPet)
 
-        assertThat(addedPet.id).isNotNull()
-        assertThat(addedPet.name).isEqualTo(newPet.name)
-        assertThat(addedPet.category?.name).isEqualTo(newPet.category?.name)
-        assertThat(addedPet.status).isEqualTo(newPet.status)
+        petVerifier.verifyPetDetails(addedPet, newPet)
     }
 
     @Test
+    @Story("Pet Management")
     @Description("Update an existing pet")
     fun testUpdatePet() {
-        // First, create and add a new pet to the server
-        val originalPet = createTestPet()
+        val originalPet = PetTestDataFactory.createTestPet()
         val addedPet = petApi.addPet(originalPet)
 
-        // Now update the pet
         val updatedPet = addedPet.copy(
             name = "Updated Dog",
             status = Pet.Status.sold
@@ -57,48 +54,36 @@ class PetApiTest : BaseApiTest() {
     }
 
     @Test
+    @Story("Pet Search")
     @Description("Find pets by status")
     fun testFindPetsByStatus() {
         val status = StatusFindPetsByStatus.sold
         val pets = petApi.findPetsByStatus(status)
 
         assertThat(pets).isNotEmpty()
-        assertThat(pets.all { it.status!!.value == status.value }).isTrue()
+        assertThat(pets.all { it.status!!.value == status.value })
+            .withFailMessage("Not all returned pets have status: ${status.value}")
+            .isTrue()
     }
 
     @Test
+    @Story("Pet Search")
     @Description("Find pet by ID")
     fun testGetPetById() {
-        val addedPet = petApi.addPet(createTestPet())
+        val addedPet = petApi.addPet(PetTestDataFactory.createTestPet())
         val retrievedPet = petApi.getPetById(addedPet.id!!)
 
-        assertThat(retrievedPet).isNotNull()
-        assertThat(retrievedPet.id).isEqualTo(addedPet.id)
-        assertThat(retrievedPet.name).isEqualTo(addedPet.name)
-        assertThat(retrievedPet.status).isEqualTo(addedPet.status)
+        petVerifier.verifyPetDetails(retrievedPet, addedPet)
     }
 
     @Test
+    @Story("Pet Management")
     @Description("Delete a pet")
     fun testDeletePet() {
         val testId: Long = Random.nextLong(15_100, 100_000)
-        val addedPet = petApi.addPet(createTestPet(testId))
+        val addedPet = petApi.addPet(PetTestDataFactory.createTestPet(testId))
+        
         petApi.deletePet(addedPet.id!!)
-
-        assertThatThrownBy {
-            petApi.getPetById(testId)
-        }.isInstanceOf(ClientException::class.java)
-            .hasFieldOrPropertyWithValue("statusCode", 404)  // Pet not found
-    }
-
-    private fun createTestPet(id: Long = ThreadLocalRandom.current().nextLong(7000, 13_000)): Pet {
-        return Pet(
-            id = id,
-            name = "PetName$id",
-            category = Category(id = 1, name = "Dogs"),
-            photoUrls = listOf("string"),
-            tags = listOf(Tag(id = 0, name = "testAPITag")),
-            status = Pet.Status.available
-        )
+        petVerifier.verifyPetNotFound(testId)
     }
 }
