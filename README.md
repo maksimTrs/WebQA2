@@ -1,6 +1,6 @@
 # WebQA Test Automation Framework
 
-A test automation framework built with Kotlin, featuring both UI and API testing capabilities. 
+A test automation framework built with Kotlin features UI and API testing capabilities. 
 
 The framework uses TestNG for test execution, Selenium WebDriver for UI testing, and REST Assured for API testing.
 
