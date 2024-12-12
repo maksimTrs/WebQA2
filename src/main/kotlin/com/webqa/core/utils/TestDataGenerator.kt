@@ -13,6 +13,6 @@ object TestDataGenerator {
         "number" to "4444${faker.number().digits(12)}",
         "date" to "${faker.number().numberBetween(1, 12)}:${faker.number().numberBetween(23, 30)}",
         "name" to faker.name().fullName().uppercase(),
-        "cvv" to faker.number().digits(3)
+        "cvv" to faker.number().numberBetween(100, 999)
     )
 }

@@ -15,12 +15,21 @@ class SignUpAPITest : BaseApiTest() {
 
     private lateinit var signUpClient: AuthApiClient
 
+    companion object {
+        private const val SUCCESS_MESSAGE = "You have successfully registered"
+        private const val PASSWORD_MISMATCH_MESSAGE = "Passwords do not match"
+        private const val VALIDATION_ERROR_MESSAGE = "Field Validation Error"
+        private const val INVALID_EMAIL = "invalid-email"
+        private const val MISMATCHED_PASSWORD_1 = "password1"
+        private const val MISMATCHED_PASSWORD_2 = "password2"
+    }
+
     @BeforeMethod
     fun setup() {
         signUpClient = AuthApiClient()
     }
 
-    @Test
+    @Test(description = "Verify successful user registration")
     fun testSuccessfulSignUp() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
@@ -30,32 +39,32 @@ class SignUpAPITest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request, statusCodeVal = SC_OK)
-        assertThat(response.message).isEqualTo("You have successfully registered")
+        assertThat(response.message).isEqualTo(SUCCESS_MESSAGE)
     }
 
-    @Test(description = "Verify password mismatch")
+    @Test(description = "Verify password mismatch validation")
     fun testSignUpWithMismatchedPasswords() {
         val request = SignUpRequest(
             email = generateEmail(),
-            password = "password1",
-            passwordConfirm = "password2"
+            password = MISMATCHED_PASSWORD_1,
+            passwordConfirm = MISMATCHED_PASSWORD_2
         )
 
         val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
-        assertThat(response.error!!.message).isEqualTo("Passwords do not match")
+        assertThat(response.error!!.message).isEqualTo(PASSWORD_MISMATCH_MESSAGE)
     }
 
-    @Test(description = "Verify invalid email format")
+    @Test(description = "Verify invalid email format validation")
     fun testSignUpWithInvalidEmail() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
-            email = "invalid-email",
+            email = INVALID_EMAIL,
             password = newPassword,
             passwordConfirm = newPassword
         )
 
         val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
-        assertThat(response.error!!.message).isEqualTo("Field Validation Error")
+        assertThat(response.error!!.message).isEqualTo(VALIDATION_ERROR_MESSAGE)
     }
 
     @Test(description = "Verify existing email validation")

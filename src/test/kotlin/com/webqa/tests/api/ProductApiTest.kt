@@ -15,67 +15,56 @@ class ProductApiTest : BaseApiTest() {
     private lateinit var productApiClient: ProductApiClient
     private lateinit var authToken: String
 
+    companion object {
+        private const val EXPECTED_PRODUCTS_COUNT = 5
+        private const val EXPECTED_SALE_PERCENTAGE = 0.1
+        private const val DEFAULT_PRODUCT_ID = "1"
+        private const val DEFAULT_PRODUCT_QUANTITY = 1
+        private const val EXPECTED_TOTAL_SUM = 100
+        private const val SUCCESSFUL_PURCHASE_MESSAGE = "The 100usd purchase is successfully completed"
+    }
+
     @BeforeClass
     fun setup() {
         authApiClient = AuthApiClient()
         productApiClient = ProductApiClient()
-
-        // Login to get auth token
         authToken = authApiClient.login(userEmail, userPassword)
     }
 
     @Test
     @Description("Verify products can be retrieved")
     fun testGetProducts() {
-        val response = productApiClient.getProducts(authToken)
+        val productsResponse = productApiClient.getProducts(authToken)
 
-        assertThat(response.products)
+        assertThat(productsResponse.products)
+            .withFailMessage("Products list should not be empty")
             .isNotEmpty
-            .hasSize(5)
+            .hasSize(EXPECTED_PRODUCTS_COUNT)
 
-        assertThat(response.sale)
-            .isEqualTo(0.1)
+        assertThat(productsResponse.sale)
+            .withFailMessage("Sale percentage should match expected value")
+            .isEqualTo(EXPECTED_SALE_PERCENTAGE)
     }
 
     @Test
     @Description("Verify order can be created")
     fun testCreateOrder() {
-        val productIdVal = "1"
-        val productQty = 1
         val cardDetails = TestDataGenerator.generateCardDetails()
 
         val orderResponse = productApiClient.createOrder(
             authToken = authToken,
-            productId = productIdVal,
-            quantity = productQty,
+            productId = DEFAULT_PRODUCT_ID,
+            quantity = DEFAULT_PRODUCT_QUANTITY,
             cardDetails = cardDetails
         )
 
         SoftAssertions().apply {
-            assertThat(orderResponse.transaction.id)
-                .`as`("Transaction ID")
-                .isNotNull()
-
-            assertThat(orderResponse.transaction.order.totalQuantity)
-                .`as`("Order Quantity")
-                .isEqualTo(productQty)
-
-            assertThat(orderResponse.transaction.order.id)
-                .`as`("Order ID")
-                .isNotNull()
-
-            assertThat(orderResponse.transaction.order.totalSum)
-                .`as`("Total Sum")
-                .isEqualTo(100)
-
-            assertThat(orderResponse.message)
-                .`as`("Order Message")
-                .isEqualTo("The 100usd purchase is successfully completed")
-
-            assertThat(orderResponse.transaction.order.products[0].product.id)
-                .`as`("Product ID")
-                .isEqualTo(productIdVal)
-
+            assertThat(orderResponse.transaction.id).isNotNull()
+            assertThat(orderResponse.transaction.order.totalQuantity).isEqualTo(DEFAULT_PRODUCT_QUANTITY)
+            assertThat(orderResponse.transaction.order.id).isNotNull()
+            assertThat(orderResponse.transaction.order.totalSum).isEqualTo(EXPECTED_TOTAL_SUM)
+            assertThat(orderResponse.message).isEqualTo(SUCCESSFUL_PURCHASE_MESSAGE)
+            assertThat(orderResponse.transaction.order.products[0].product.id).isEqualTo(DEFAULT_PRODUCT_ID)
         }.assertAll()
     }
 }
