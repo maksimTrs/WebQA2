@@ -1,0 +1,64 @@
+language: java
+
+jdk:
+  - openjdk17
+
+# Use a Linux distribution that supports Chrome
+dist: focal
+
+# Enable sudo for Chrome installation
+sudo: required
+
+# Cache Gradle dependencies
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/
+
+# Install Chrome and required dependencies
+addons:
+  chrome: stable
+  apt:
+    packages:
+      - chromium-chromedriver
+
+before_install:
+  - export CHROME_BIN=/usr/bin/google-chrome
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 5 # give xvfb some time to start
+  - chmod +x gradlew
+
+install:
+  - ./gradlew assemble
+
+before_script:
+  - whereis google-chrome-stable
+  - whereis chromedriver
+  - google-chrome-stable --version
+  - chromedriver --version
+
+script:
+  # Run API tests
+  - ./gradlew test --tests "com.webqa.api.*"
+  # Run UI tests
+  - ./gradlew test --tests "com.webqa.ui.*"
+  # Generate Allure Report
+  - ./gradlew allureReport
+
+after_script:
+  - ./gradlew allureReport
+
+# Store test results and Allure reports
+after_failure:
+  - if [ -d "build/reports" ]; then tar -czf reports.tar.gz build/reports; fi
+  - if [ -d "build/allure-results" ]; then tar -czf allure-results.tar.gz build/allure-results; fi
+
+# Deploy Allure reports (optional)
+deploy:
+  provider: pages
+  skip_cleanup: true
+  github_token: $GITHUB_TOKEN
+  local_dir: build/reports/allure-report
+  on:
+    branch: master
