@@ -147,6 +147,7 @@ The framework uses Typesafe Config for configuration management. Main configurat
 - `application.conf`: Main configuration file
 - `petstore-openapi.json`: OpenAPI spec file
 - `logback-test.xml`: Logging configuration
+- `docker-compose.yml`: Docker file to run FF and Chrome instances via selenium/hub:4.16.1
 
 ## 🧪 Test Data Management
 
