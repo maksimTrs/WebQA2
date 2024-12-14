@@ -1,5 +1,5 @@
 <!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
-<suite name="API Test Suite" parallel="methods" thread-count="4">
+<suite name="API Test Suite" parallel="methods" thread-count="2">
     <listeners>
         <listener class-name="com.webqa.core.listeners.TestListener"/>
     </listeners>

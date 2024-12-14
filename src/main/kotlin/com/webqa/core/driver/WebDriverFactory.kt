@@ -4,7 +4,9 @@ import com.webqa.core.config.Configuration.browser
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.WebDriver
+import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
+import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.firefox.FirefoxOptions
 import org.openqa.selenium.remote.RemoteWebDriver
 import java.net.URL
@@ -26,9 +28,9 @@ object WebDriverFactory {
             FIREFOX -> createFirefoxDriver(windowSize)
         }
         driverThreadLocal.set(driver)
+        println("Creating ${browser.name} driver (${if (isRemoteExecution()) "remote" else "local"})")
         return driver
     }
-
 
     @Synchronized
     fun quitDriver() {
@@ -36,7 +38,6 @@ object WebDriverFactory {
         try {
             driver?.quit()
         } catch (e: Exception) {
-            // Log the exception but don't throw it
             println("Error quitting driver: ${e.message}")
         } finally {
             driverThreadLocal.remove()
@@ -49,7 +50,13 @@ object WebDriverFactory {
             addArguments("--disable-extensions")
             addArguments("--incognito")
         }
-        return RemoteWebDriver(URL("http://localhost:4444/wd/hub"), options).apply {
+        
+        return if (isRemoteExecution()) {
+            RemoteWebDriver(URL(SELENIUM_GRID_URL), options)
+        } else {
+            WebDriverManager.chromedriver().setup()
+            ChromeDriver(options)
+        }.apply {
             manage().window().size = windowSize
         }
     }
@@ -58,7 +65,13 @@ object WebDriverFactory {
         val options = FirefoxOptions().apply {
             addArguments("-private")
         }
-        return RemoteWebDriver(URL("http://localhost:4444/wd/hub"), options).apply {
+        
+        return if (isRemoteExecution()) {
+            RemoteWebDriver(URL(SELENIUM_GRID_URL), options)
+        } else {
+            WebDriverManager.firefoxdriver().setup()
+            FirefoxDriver(options)
+        }.apply {
             manage().window().size = windowSize
         }
     }
@@ -68,5 +81,9 @@ object WebDriverFactory {
             "firefox" -> FIREFOX
             else -> CHROME
         }
+    }
+
+    private fun isRemoteExecution(): Boolean {
+        return System.getProperty("remote", "false").toBoolean()
     }
 }

@@ -42,64 +42,77 @@ src
 
 1. Java 17
 2. Gradle installed (or use the included Gradle wrapper)
-3. Docker installed (for UI tests) 
-4. Chrome browser installed (for UI tests) 
+3. Docker installed (for remote execution)
+4. Browsers installed (for local execution)
 
-**_TODO_**: Add Docker runners for Chrome and Firefox
+### Running UI Tests
 
-### Running UI Tests with Docker
+Tests can be run either locally or remotely using Docker Selenium Grid.
+
+#### Local Execution (Default)
+
+Requires browsers to be installed locally:
+```bash
+# Chrome (default)
+gradlew.bat test --tests com.webqa.tests.ui.LoginTest
+
+# Firefox
+gradlew.bat test --tests com.webqa.tests.ui.LoginTest -Dbrowser=firefox
+```
+
+#### Remote Execution (Docker)
 
 1. Start Selenium Grid and browser containers:
 ```bash
 docker-compose up -d
 ```
 
-2. Access Selenium Grid and browsers:
-- Grid Console: `http://localhost:4444/ui`
+2. Access test execution:
+- Selenium Grid: `http://localhost:4444/ui`
 - Chrome VNC: `http://localhost:7900` (no password required)
 - Firefox VNC: `http://localhost:7901` (no password required)
 
-VNC viewers allow you to watch tests running in real-time in the browser containers.
-
-3. Run tests in Chrome (default):
+3. Run tests:
 ```bash
-gradlew.bat test --tests com.webqa.tests.ui.LoginTest
+# Chrome
+gradlew.bat test --tests com.webqa.tests.ui.LoginTest -Dremote=true
+
+# Firefox
+gradlew.bat test --tests com.webqa.tests.ui.LoginTest -Dbrowser=firefox -Dremote=true
 ```
 
-4. Run tests in Firefox:
-```bash
-gradlew.bat test --tests com.webqa.tests.ui.LoginTest -Dbrowser=firefox
-```
-
-5. View Selenium Grid console:
-```
-http://localhost:4444/ui
-```
-
-6. Stop containers when done:
+4. Stop containers:
 ```bash
 docker-compose down
 ```
-### Running Tests Using TestNG XML
 
-The project includes several TestNG XML suites for different test categories:
+### Test Suites
 
-1. Run all tests:
+The project includes several TestNG XML suites in `src/test/resources/`:
+
+1. `testNg.xml`: All tests
+2. `ui-tests.xml`: UI tests in Chrome and Firefox
+3. `api-tests.xml`: API tests only
+4. `smoke.xml`: Critical path tests
+5. `regression.xml`: Full regression suite
+
+Run a specific suite:
 ```bash
-./gradlew test
-```
-2. Run specific test suite:
-```bash
-./gradlew test -PsuiteFile=src/test/resources/testNg.xml
-```
-### Available Test Suites
+# Local execution
+gradlew.bat test -PsuiteFile=src/test/resources/regression.xml
 
-Test suite XMLs in `src/test/resources/`:
-- `testNg.xml`: Runs all tests
-- `ui-tests.xml`: UI tests only (Chrome and Firefox)
-- `api-tests.xml`: API tests only
-- `smoke.xml`: Critical path tests
-- `regression.xml`: Runs full regression suite
+# Remote execution (Docker)
+gradlew.bat test -PsuiteFile=src/test/resources/regression.xml -Dremote=true
+```
+
+Browser selection:
+- TestNG XML: `<parameter name="browser" value="firefox"/>`
+- System property: `-Dbrowser=firefox`
+- Default: Chrome
+
+Execution mode:
+- Local: Default
+- Remote: `-Dremote=true`
 
 ## 📝 Test Categories
 

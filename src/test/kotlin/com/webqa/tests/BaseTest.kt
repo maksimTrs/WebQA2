@@ -1,6 +1,7 @@
 package com.webqa.tests
 
 import WebDriverFactory
+import WebDriverFactory.Browser
 import com.webqa.core.config.Configuration.App
 import io.qameta.allure.Allure
 import io.qameta.allure.Step
@@ -12,6 +13,8 @@ import org.testng.ITestContext
 import org.testng.ITestResult
 import org.testng.annotations.AfterMethod
 import org.testng.annotations.BeforeMethod
+import org.testng.annotations.Optional
+import org.testng.annotations.Parameters
 import java.io.ByteArrayInputStream
 
 abstract class BaseTest {
@@ -21,10 +24,18 @@ abstract class BaseTest {
 
     private lateinit var driver: WebDriver
 
+    @Parameters("browser")
     @BeforeMethod
     @Step("Initialize WebDriver")
-    fun setUp(context: ITestContext) {
-        driver = WebDriverFactory.createDriver()
+    fun setUp(@Optional browser: String?, context: ITestContext) {
+        val browserType = when (browser?.lowercase()) {
+            "firefox" -> Browser.FIREFOX
+            "chrome" -> Browser.CHROME
+            null -> Browser.CHROME
+            else -> Browser.CHROME
+        }
+        
+        driver = WebDriverFactory.createDriver(browserType)
         context.setAttribute("WebDriver", driver)
         
         // Log browser info
