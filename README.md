@@ -42,30 +42,64 @@ src
 
 1. Java 17
 2. Gradle installed (or use the included Gradle wrapper)
-3. Chrome browser installed (for UI tests) 
+3. Docker installed (for UI tests) 
+4. Chrome browser installed (for UI tests) 
 
 **_TODO_**: Add Docker runners for Chrome and Firefox
 
+### Running UI Tests with Docker
+
+1. Start Selenium Grid and browser containers:
+```bash
+docker-compose up -d
+```
+
+2. Access Selenium Grid and browsers:
+- Grid Console: `http://localhost:4444/ui`
+- Chrome VNC: `http://localhost:7900` (no password required)
+- Firefox VNC: `http://localhost:7901` (no password required)
+
+VNC viewers allow you to watch tests running in real-time in the browser containers.
+
+3. Run tests in Chrome (default):
+```bash
+gradlew.bat test --tests com.webqa.tests.ui.LoginTest
+```
+
+4. Run tests in Firefox:
+```bash
+gradlew.bat test --tests com.webqa.tests.ui.LoginTest -Dbrowser=firefox
+```
+
+5. View Selenium Grid console:
+```
+http://localhost:4444/ui
+```
+
+6. Stop containers when done:
+```bash
+docker-compose down
+```
 ### Running Tests Using TestNG XML
 
 The project includes several TestNG XML suites for different test categories:
 
 1. Run all tests:
+```bash
+./gradlew test
+```
+2. Run specific test suite:
+```bash
+./gradlew test -PsuiteFile=src/test/resources/testNg.xml
+```
+### Available Test Suites
 
-`./gradlew test`
-
-
-2. Run  test suite:
-
-`./gradlew test -PsuiteFile=src/test/resources/testNg.xml`
-
-
-### Available Test Suites **_TODO_**:
-
-- `api-tests.xml`: Runs all API tests
-- `ui-tests.xml`: Runs all UI tests
+Test suite XMLs in `src/test/resources/`:
+- `testNg.xml`: Runs all tests
+- `ui-tests.xml`: UI tests only (Chrome and Firefox)
+- `api-tests.xml`: API tests only
+- `smoke.xml`: Critical path tests
 - `regression.xml`: Runs full regression suite
-- `smoke.xml`: Runs smoke tests
 
 ## 📝 Test Categories
 
@@ -86,15 +120,13 @@ The project includes several TestNG XML suites for different test categories:
 The framework uses Allure for test reporting. After test execution:
 
 1. Generate Allure report:
-
-`./gradlew allureReport`
-
-
+```bash
+./gradlew allureReport
+```
 2. Open Allure report:
-
-`./gradlew allureServe`
-
-
+```bash
+./gradlew allureServe
+```
 ## 🔧 Configuration
 
 The framework uses Typesafe Config for configuration management. Main configuration files:
@@ -107,4 +139,3 @@ The framework uses Typesafe Config for configuration management. Main configurat
 
 - Uses DataFaker for generating test data
 - Test data generators available in `TestDataGenerator` class
-

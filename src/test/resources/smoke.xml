@@ -1,0 +1,37 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="Smoke Test Suite" parallel="methods" thread-count="2">
+    <listeners>
+        <listener class-name="com.webqa.core.listeners.TestListener"/>
+    </listeners>
+    <!-- Critical UI Tests -->
+    <test name="Critical UI Tests">
+        <parameter name="browser" value="chrome"/>
+        <classes>
+            <class name="com.webqa.tests.ui.LoginTest">
+                <methods>
+                    <include name="testSuccessfulLogin"/>
+                </methods>
+            </class>
+            <class name="com.webqa.tests.ui.SignUpUITest">
+                <methods>
+                    <include name="testSuccessfulSignUp"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+    <!-- Critical API Tests -->
+    <test name="Critical API Tests">
+        <classes>
+            <class name="com.webqa.tests.api.SignUpAPITest">
+                <methods>
+                    <include name="testSuccessfulSignUp"/>
+                </methods>
+            </class>
+            <class name="com.webqa.tests.api.ProductApiTest">
+                <methods>
+                    <include name="testGetProduct"/>
+                </methods>
+            </class>
+        </classes>
+    </test>
+</suite>

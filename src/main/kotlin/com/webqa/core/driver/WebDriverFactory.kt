@@ -4,15 +4,16 @@ import com.webqa.core.config.Configuration.browser
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.chrome.ChromeOptions
-import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.firefox.FirefoxOptions
+import org.openqa.selenium.remote.RemoteWebDriver
+import java.net.URL
 
 object WebDriverFactory {
     enum class Browser { CHROME, FIREFOX }
 
     private val driverThreadLocal = ThreadLocal<WebDriver>()
+    private const val SELENIUM_GRID_URL = "http://localhost:4444/wd/hub"
 
     @Synchronized
     fun createDriver(
@@ -43,27 +44,29 @@ object WebDriverFactory {
     }
 
     private fun createChromeDriver(windowSize: Dimension): WebDriver {
-        WebDriverManager.chromedriver().setup()
-        return ChromeDriver(ChromeOptions().apply {
+        val options = ChromeOptions().apply {
             addArguments("--start-maximized")
             addArguments("--disable-extensions")
             addArguments("--incognito")
-        }).apply {
+        }
+        return RemoteWebDriver(URL("http://localhost:4444/wd/hub"), options).apply {
             manage().window().size = windowSize
         }
     }
 
     private fun createFirefoxDriver(windowSize: Dimension): WebDriver {
-        WebDriverManager.firefoxdriver().setup()
-        return FirefoxDriver(FirefoxOptions()).apply {
+        val options = FirefoxOptions().apply {
+            addArguments("-private")
+        }
+        return RemoteWebDriver(URL("http://localhost:4444/wd/hub"), options).apply {
             manage().window().size = windowSize
         }
     }
 
-    private fun getBrowserFromConfig(): Browser =
-        when (browser.lowercase()) {
-            "chrome" -> CHROME
+    private fun getBrowserFromConfig(): Browser {
+        return when (System.getProperty("browser", "chrome").lowercase()) {
             "firefox" -> FIREFOX
-            else -> CHROME // Default to Chrome if unrecognized
+            else -> CHROME
         }
+    }
 }
