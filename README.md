@@ -31,9 +31,9 @@ src
 │   │   └── utils      # Utility classes
 │   └── resources      # Configuration files
 └── test/kotlin/com/webqa
-    └── tests
-    |    ├── api       # API tests 
-    |    └── ui        # UI tests
+    ├── tests
+    |   ├── api        # API tests 
+    |   └── ui         # UI tests
     └── resources      # Configuration test files
 ```
 
