@@ -27,13 +27,14 @@ src
 │   │   ├── api        # API clients and models
 │   │   ├── config     # Configuration classes
 │   │   ├── ui         # Page objects and UI components
+|   |   ├── driver     # WebDriver factory
 │   │   └── utils      # Utility classes
-│   └── resources      # Configuration files and test data
+│   └── resources      # Configuration files
 └── test/kotlin/com/webqa
     └── tests
-        ├── api        # API tests
-        ├── ui         # UI tests
-        └── utils      # Test utilities
+    |    ├── api       # API tests 
+    |    └── ui        # UI tests
+    └── resources      # Configuration test files
 ```
 
 ## 🚀 Running Tests
@@ -152,4 +153,3 @@ The framework uses Typesafe Config for configuration management. Main configurat
 ## 🧪 Test Data Management
 
 - Uses DataFaker for generating test data
-- Test data generators available in `TestDataGenerator` class
