@@ -82,7 +82,7 @@ class PetApiTest : BaseApiTest() {
     fun testDeletePet() {
         val testId: Long = Random.nextLong(15_100, 100_000)
         val addedPet = petApi.addPet(PetTestDataFactory.createTestPet(testId))
-        
+
         petApi.deletePet(addedPet.id!!)
         petVerifier.verifyPetNotFound(testId)
     }

@@ -77,13 +77,13 @@ jobs:
       script:
         - travis_wait 30 ./gradlew test --tests "com.webqa.api.*" -Dtest.profile=ci || travis_terminate 1
         - travis_wait 40 ./gradlew test --tests "com.webqa.ui.*" -Dtest.profile=ci || travis_terminate 1
-    
+
     - stage: report
       name: "Generate Reports"
       if: branch = master AND type != pull_request
       script:
         - ./gradlew allureReport
-    
+
     - stage: deploy
       name: "Deploy Reports"
       if: branch = master AND type != pull_request AND env(TRAVIS_TEST_RESULT) = 0

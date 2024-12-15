@@ -1,6 +1,5 @@
 import WebDriverFactory.Browser.CHROME
 import WebDriverFactory.Browser.FIREFOX
-import com.webqa.core.config.Configuration.browser
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.WebDriver
@@ -19,13 +18,17 @@ object WebDriverFactory {
 
     @Synchronized
     fun createDriver(
-        browser: Browser = getBrowserFromConfig(),
+        browser: Browser,
         windowSize: Dimension = Dimension(1920, 1080)
     ): WebDriver {
         quitDriver() // Ensure we don't have any leftover driver in this thread
-        val driver = when (browser) {
-            CHROME -> createChromeDriver(windowSize)
-            FIREFOX -> createFirefoxDriver(windowSize)
+        val driver = if (isRemoteExecution()) {
+            createRemoteDriver(browser, windowSize)
+        } else {
+            when (browser) {
+                CHROME -> createChromeDriver(windowSize)
+                FIREFOX -> createFirefoxDriver(windowSize)
+            }
         }
         driverThreadLocal.set(driver)
         println("Creating ${browser.name} driver (${if (isRemoteExecution()) "remote" else "local"})")
@@ -44,36 +47,44 @@ object WebDriverFactory {
         }
     }
 
+    private fun createRemoteDriver(browser: Browser, windowSize: Dimension): WebDriver {
+        println("Creating remote driver for browser: ${browser.name}")
+        val capabilities = when (browser) {
+            CHROME -> ChromeOptions().apply {
+                addArguments("--start-maximized")
+                addArguments("--disable-extensions")
+                addArguments("--incognito")
+                setCapability("browserName", "chrome")
+            }
+
+            FIREFOX -> FirefoxOptions().apply {
+                addArguments("-private")
+                setCapability("browserName", "firefox")
+            }
+        }
+        return RemoteWebDriver(URL(SELENIUM_GRID_URL), capabilities).apply {
+            manage().window().size = windowSize
+        }
+    }
+
     private fun createChromeDriver(windowSize: Dimension): WebDriver {
         val options = ChromeOptions().apply {
             addArguments("--start-maximized")
             addArguments("--disable-extensions")
             addArguments("--incognito")
         }
-        
-        return if (isRemoteExecution()) {
-            RemoteWebDriver(URL(SELENIUM_GRID_URL), options)
-        } else {
-            WebDriverManager.chromedriver().setup()
-            ChromeDriver(options)
-        }.apply {
-            manage().window().size = windowSize
-        }
+
+        return WebDriverManager.chromedriver().setup()
+            .let { ChromeDriver(options).apply { manage().window().size = windowSize } }
     }
 
     private fun createFirefoxDriver(windowSize: Dimension): WebDriver {
         val options = FirefoxOptions().apply {
             addArguments("-private")
         }
-        
-        return if (isRemoteExecution()) {
-            RemoteWebDriver(URL(SELENIUM_GRID_URL), options)
-        } else {
-            WebDriverManager.firefoxdriver().setup()
-            FirefoxDriver(options)
-        }.apply {
-            manage().window().size = windowSize
-        }
+
+        return WebDriverManager.firefoxdriver().setup()
+            .let { FirefoxDriver(options).apply { manage().window().size = windowSize } }
     }
 
     private fun getBrowserFromConfig(): Browser {

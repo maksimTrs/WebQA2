@@ -7,7 +7,7 @@ import org.openapitools.client.models.Tag
 import java.util.concurrent.ThreadLocalRandom
 
 object PetTestDataFactory {
-    
+
     @Step("Create test pet with id: {id}")
     fun createTestPet(id: Long = ThreadLocalRandom.current().nextLong(7000, 13_000)): Pet {
         return Pet(
@@ -26,6 +26,6 @@ object PetTestDataFactory {
     }
 
     private fun createDefaultCategory() = Category(id = 1, name = "Dogs")
-    
+
     private fun createDefaultTag() = Tag(id = 0, name = "testAPITag")
 }

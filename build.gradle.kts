@@ -36,8 +36,8 @@ dependencies {
     implementation("io.qameta.allure:allure-testng:2.22.2")
     implementation("io.qameta.allure:allure-rest-assured:2.22.2")
     implementation("io.qameta.allure:allure-attachments:2.22.2")
-    implementation ("com.squareup.okhttp3:logging-interceptor:4.9.1")
-    implementation ("io.qameta.allure:allure-okhttp3:2.17.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
+    implementation("io.qameta.allure:allure-okhttp3:2.17.0")
 
     // Data Generation
     implementation("net.datafaker:datafaker:2.0.1")
@@ -53,9 +53,9 @@ dependencies {
     testImplementation("org.slf4j:slf4j-api:2.0.9")
     testImplementation("org.codehaus.janino:janino:3.1.10")
 
-    implementation ("com.squareup.moshi:moshi:1.14.0")
+    implementation("com.squareup.moshi:moshi:1.14.0")
     // For Kotlin support
-    implementation ("com.squareup.moshi:moshi-kotlin:1.14.0")
+    implementation("com.squareup.moshi:moshi-kotlin:1.14.0")
 }
 
 // OpenAPI Generator configuration
@@ -68,8 +68,12 @@ openApiGenerate {
 tasks.test {
     useTestNG {
         useDefaultListeners = true
+        if (project.hasProperty("suiteFile")) {
+            suites(project.property("suiteFile").toString())
+        }
     }
     systemProperty("allure.results.directory", "build/allure-results")
+    systemProperty("remote", System.getProperty("remote", "false"))
 
     testLogging {
         events("passed", "skipped", "failed")
@@ -84,11 +88,11 @@ sourceSets {
             srcDir("$buildDir/generate-resources/src/main")
         }
     }
-/*    test {
-        kotlin {
-            srcDir("src/test/kotlin")
-        }
-    }*/
+    /*    test {
+            kotlin {
+                srcDir("src/test/kotlin")
+            }
+        }*/
 }
 
 
@@ -108,4 +112,3 @@ tasks.register<Delete>("cleanOpenApiGenerated") {
     delete("${buildDir}/generate-resources")
 }
 // ./gradlew openApiGenerate
-

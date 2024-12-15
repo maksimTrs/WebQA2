@@ -2,7 +2,7 @@ package com.webqa.tests
 
 import WebDriverFactory
 import WebDriverFactory.Browser
-import com.webqa.core.config.Configuration.App
+import com.webqa.core.config.Configuration
 import io.qameta.allure.Allure
 import io.qameta.allure.Step
 import org.openqa.selenium.OutputType
@@ -18,9 +18,9 @@ import org.testng.annotations.Parameters
 import java.io.ByteArrayInputStream
 
 abstract class BaseTest {
-    protected val baseUrl = App.baseUrl
-    protected val userEmail = App.userEmail
-    protected val userPass = App.userPass
+    protected val baseUrl = Configuration.App.baseUrl
+    protected val userEmail = Configuration.App.userEmail
+    protected val userPass = Configuration.App.userPass
 
     private lateinit var driver: WebDriver
 
@@ -28,20 +28,34 @@ abstract class BaseTest {
     @BeforeMethod
     @Step("Initialize WebDriver")
     fun setUp(@Optional browser: String?, context: ITestContext) {
-        val browserType = when (browser?.lowercase()) {
-            "firefox" -> Browser.FIREFOX
-            "chrome" -> Browser.CHROME
-            null -> Browser.CHROME
-            else -> Browser.CHROME
+        // TestNG parameter takes precedence over system property and config file
+        val browserParam = browser?.lowercase() ?: System.getProperty("browser")?.lowercase()
+        println("Initializing test with browser parameter: $browserParam")
+
+        val browserType = when (browserParam) {
+            "firefox" -> {
+                println("Setting up Firefox driver")
+                Browser.FIREFOX
+            }
+
+            "chrome", null -> {
+                println("Setting up Chrome driver")
+                Browser.CHROME
+            }
+
+            else -> {
+                println("Unknown browser parameter: $browserParam, defaulting to Chrome")
+                Browser.CHROME
+            }
         }
-        
+
         driver = WebDriverFactory.createDriver(browserType)
         context.setAttribute("WebDriver", driver)
-        
+
         // Log browser info
         if (driver is RemoteWebDriver) {
             val capabilities = (driver as RemoteWebDriver).capabilities
-            println("Starting test on ${capabilities.browserName} ${capabilities.browserVersion}")
+            println("Started test on ${capabilities.browserName} ${capabilities.browserVersion}")
         }
     }
 

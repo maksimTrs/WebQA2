@@ -3,7 +3,7 @@
     <listeners>
         <listener class-name="com.webqa.core.listeners.TestListener"/>
     </listeners>
-    
+
     <!-- Chrome UI Tests -->
     <test name="Chrome UI Tests">
         <parameter name="browser" value="chrome"/>

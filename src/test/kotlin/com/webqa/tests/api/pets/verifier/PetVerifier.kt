@@ -3,9 +3,9 @@ package com.webqa.tests.api.pets.verifier
 import io.qameta.allure.Step
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.Assertions.assertThatThrownBy
+import org.openapitools.client.apis.PetApi
 import org.openapitools.client.infrastructure.ClientException
 import org.openapitools.client.models.Pet
-import org.openapitools.client.apis.PetApi
 
 class PetVerifier(private val petApi: PetApi) {
 
