@@ -1,3 +1,5 @@
+package com.webqa.core.driver
+
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.MutableCapabilities
@@ -9,7 +11,6 @@ import org.openqa.selenium.firefox.FirefoxOptions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.slf4j.LoggerFactory
 import java.net.URL
-
 
 object WebDriverFactory {
     private val logger = LoggerFactory.getLogger(WebDriverFactory::class.java)
@@ -31,12 +32,10 @@ object WebDriverFactory {
         })
     }
 
-    @Synchronized
     fun createDriver(
         browser: Browser,
         windowSize: Dimension = Dimension(1920, 1080)
     ): WebDriver {
-        quitDriver()
         val driver = if (isRemoteExecution()) {
             createRemoteDriver(browser, windowSize)
         } else {
@@ -47,17 +46,20 @@ object WebDriverFactory {
         return driver
     }
 
-    @Synchronized
+    fun getDriver(): WebDriver {
+        return driverThreadLocal.get() ?: throw IllegalStateException("WebDriver has not been initialized for this thread.")
+    }
+
     fun quitDriver() {
-        val driver = driverThreadLocal.get()
-        try {
-            driver?.quit()
-        } catch (e: Exception) {
-            logger.error("Error quitting driver: ${e.message}")
-        } finally {
+        runCatching {
+            driverThreadLocal.get()?.quit()
+        }.onFailure {
+            logger.error("Error quitting driver: ${it.message}")
+        }.also {
             driverThreadLocal.remove()
         }
     }
+
 
     private fun createRemoteDriver(browser: Browser, windowSize: Dimension): WebDriver {
         logger.info("Creating remote driver for browser: ${browser.name}")
