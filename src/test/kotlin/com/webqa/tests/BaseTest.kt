@@ -28,7 +28,7 @@ abstract class BaseTest {
     @BeforeMethod
     @Step("Initialize WebDriver")
     fun setUp(@Optional browser: String?) {
-        val browserType = WebDriverFactory.Browser.valueOf(browser?.uppercase() ?: "CHROME")
+        val browserType = WebDriverFactory.Browser.valueOf(browser?.uppercase() ?: Configuration.browser.uppercase())
         logger.info("Initializing test with browser: ${browserType.name}")
 
         WebDriverFactory.createDriver(browserType).also {
