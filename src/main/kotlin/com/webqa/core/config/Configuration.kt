@@ -8,6 +8,7 @@ object Configuration {
 
     val browser: String = config.getString("webdriver.browser")
     val timeout: Int = config.getInt("webdriver.timeout")
+    val isRemote: String = config.getString("webdriver.isRemote")
 
     object App {
         val baseUrl: String = config.getString("app.baseUrl")

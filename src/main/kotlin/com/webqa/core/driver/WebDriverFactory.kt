@@ -1,5 +1,6 @@
 package com.webqa.core.driver
 
+import com.webqa.core.config.Configuration
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.MutableCapabilities
@@ -85,6 +86,6 @@ object WebDriverFactory {
     }
 
     private fun isRemoteExecution(): Boolean {
-        return System.getProperty("remote", "false").toBoolean()
+        return System.getProperty("remote", Configuration.isRemote).toBoolean()
     }
 }

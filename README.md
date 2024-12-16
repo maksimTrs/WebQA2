@@ -69,9 +69,9 @@ Requires browsers to be installed locally  (use <"> or <'> to wrap xml path):
 
 _Chrome (default)_
 
-`./gradlew test --tests com.webqa.tests.ui.LoginTest`
+`./gradlew clean test --tests com.webqa.tests.ui.LoginTest`
 
-`./gradlew test -PsuiteFile=src/test/resources/regression.xml`
+`./gradlew clean test -PsuiteFile=src/test/resources/regression.xml`
 
 #### Remote Execution (Docker)
 
@@ -89,7 +89,7 @@ docker-compose up -d
 
 3. Run tests:
 
-`./gradlew test -PsuiteFile=src/test/resources/ui-tests.xml -Dremote=true`
+`./gradlew clean test -PsuiteFile=src/test/resources/ui-tests.xml -Dremote=true`
 
 4. Stop containers:
 
