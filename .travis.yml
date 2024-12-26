@@ -85,7 +85,7 @@ jobs:
       name: "Code Quality Checks"
       script:
         - ./gradlew checkstyleMain checkstyleTest spotlessCheck --no-daemon
-    
+
     - stage: test
       name: "API Tests"
       script:
@@ -93,7 +93,7 @@ jobs:
           timeout 30m ./gradlew test --tests "com.webqa.api.*" \
           -Dtest.profile=ci \
           -Ptest.tags="api" || travis_terminate 1
-    
+
     - stage: test
       name: "UI Tests - Part 1"
       script:
@@ -102,7 +102,7 @@ jobs:
           -Dwebdriver.chrome.driver=/usr/local/bin/chromedriver \
           -Dchrome.options="$CHROME_OPTIONS" \
           -Dtest.profile=ci || travis_terminate 1
-    
+
     - stage: test
       name: "UI Tests - Part 2"
       script:

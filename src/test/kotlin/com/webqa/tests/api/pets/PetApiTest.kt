@@ -55,9 +55,9 @@ class PetApiTest : BaseApiTest() {
 
     @Test
     @Story("Pet Search")
-    @Description("Find pets by status")
+    @Description("Find pets by status 'pending'")
     fun testFindPetsByStatus() {
-        val status = StatusFindPetsByStatus.sold
+        val status = StatusFindPetsByStatus.pending
         val pets = petApi.findPetsByStatus(status)
 
         assertThat(pets).isNotEmpty()

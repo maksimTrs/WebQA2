@@ -23,7 +23,6 @@ abstract class BaseTest {
     protected val userEmail = Configuration.App.userEmail
     protected val userPass = Configuration.App.userPass
 
-
     @Parameters("browser")
     @BeforeMethod
     @Step("Initialize WebDriver")
@@ -37,15 +36,14 @@ abstract class BaseTest {
                 logger.info("Started test on ${capabilities.browserName} ${capabilities.browserVersion}")
             }
         }
-
     }
 
     @AfterMethod(alwaysRun = true)
     @Step("Close WebDriver")
     fun tearDown(testResult: ITestResult) {
         runCatching {
-            if (testResult.status == ITestResult.FAILURE) {
-                attachScreenshot()
+            when (testResult.status) {
+                ITestResult.FAILURE -> attachScreenshot()
             }
         }.onFailure {
             logger.error("Failed to capture failure evidence: ${it.message}")

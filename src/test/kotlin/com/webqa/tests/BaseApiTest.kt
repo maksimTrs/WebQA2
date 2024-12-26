@@ -9,13 +9,12 @@ import org.openapitools.client.apis.PetApi
 import org.testng.annotations.BeforeClass
 import java.util.concurrent.TimeUnit
 
-abstract class BaseApiTest {
+private const val PET_SHOP_URL: String = "https://petstore3.swagger.io/api/v3"
 
+abstract class BaseApiTest {
     protected val userEmail: String = App.userEmail
     protected val userPassword: String = App.userPass
-    protected val petURL: String = "https://petstore3.swagger.io/api/v3"
-
-    protected lateinit var httpClient: OkHttpClient
+    private lateinit var httpClient: OkHttpClient
 
     @BeforeClass
     fun setUpBase() {
@@ -41,6 +40,6 @@ abstract class BaseApiTest {
 
     @Step("Create Pet API client")
     protected fun createPetApi(): PetApi {
-        return PetApi(petURL, httpClient)
+        return PetApi(PET_SHOP_URL, httpClient)
     }
 }

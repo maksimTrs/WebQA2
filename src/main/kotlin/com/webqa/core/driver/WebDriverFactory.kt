@@ -16,7 +16,10 @@ import java.net.URL
 object WebDriverFactory {
     private val logger = LoggerFactory.getLogger(WebDriverFactory::class.java)
     private val driverThreadLocal = ThreadLocal<WebDriver>()
-    private val SELENIUM_GRID_URL = System.getProperty("selenium.grid.url", "http://localhost:4444/wd/hub")
+    private const val DEFAULT_WINDOW_WIDTH = 1920
+    private const val DEFAULT_WINDOW_HEIGHT = 1080
+    private const val DEFAULT_SELENIUM_GRID_URL = "http://localhost:4444/wd/hub"
+    private val seleniumGridUrl = System.getProperty("selenium.grid.url", DEFAULT_SELENIUM_GRID_URL)
 
     enum class Browser(val capabilities: () -> MutableCapabilities) {
         CHROME({
@@ -35,7 +38,7 @@ object WebDriverFactory {
 
     fun createDriver(
         browser: Browser,
-        windowSize: Dimension = Dimension(1920, 1080)
+        windowSize: Dimension = Dimension(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
     ): WebDriver {
         val driver = if (isRemoteExecution()) {
             createRemoteDriver(browser, windowSize)
@@ -52,19 +55,20 @@ object WebDriverFactory {
     }
 
     fun quitDriver() {
-        runCatching {
-            driverThreadLocal.get()?.quit()
-        }.onFailure {
-            logger.error("Error quitting driver: ${it.message}")
-        }.also {
-            driverThreadLocal.remove()
+        driverThreadLocal.get()?.let { driver ->
+            try {
+                driver.quit()
+            } catch (e: Exception) {
+                logger.error("Error quitting driver: ${e.message}")
+            } finally {
+                driverThreadLocal.remove()
+            }
         }
     }
 
-
     private fun createRemoteDriver(browser: Browser, windowSize: Dimension): WebDriver {
         logger.info("Creating remote driver for browser: ${browser.name}")
-        return RemoteWebDriver(URL(SELENIUM_GRID_URL), browser.capabilities()).apply {
+        return RemoteWebDriver(URL(seleniumGridUrl), browser.capabilities()).apply {
             manage().window().size = windowSize
         }
     }

@@ -1,5 +1,6 @@
 package com.webqa.core.ui.pages
 
+import com.webqa.core.config.Configuration
 import com.webqa.core.ui.BasePage
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
@@ -22,10 +23,8 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
     @FindBy(xpath = "//div/a/following::h6[contains(text(), 'Welcome')]")
     private lateinit var loggedInUserInfo: WebElement
 
-    /* private val productCards: List<WebElement>
-         get() = driver.findElements(By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item"))*/
     private val productCards: List<WebElement> by lazy {
-        WebDriverWait(driver, Duration.ofSeconds(10))
+        WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
             .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item")))
     }
 
@@ -48,7 +47,7 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
     }
 
     fun waitForLoginComplete(expectedEmail: String) {
-        val wait = WebDriverWait(driver, Duration.ofSeconds(10))
+        val wait = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
         wait.until { driver ->
             try {
                 val text = loggedInUserInfo.text.trim()

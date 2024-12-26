@@ -15,11 +15,25 @@ class LoginPage(driver: WebDriver) : BasePage(driver) {
     @FindBy(css = "button[type='submit']")
     private lateinit var loginButton: WebElement
 
-    fun login(email: String, password: String) {
+
+    fun enterEmail(email: String) {
         waitForElement(emailInput)
         emailInput.sendKeys(email)
+    }
+
+    fun enterPassword(password: String) {
+        waitForElement(passwordInput)
         passwordInput.sendKeys(password)
+    }
+
+    fun clickLoginButton() {
         waitForElementToBeClickable(loginButton)
         loginButton.click()
+    }
+
+    fun login(email: String, password: String) {
+        enterEmail(email)
+        enterPassword(password)
+        clickLoginButton()
     }
 }

@@ -7,7 +7,7 @@ object TestDataGenerator {
 
     fun generateEmail() = "test${Faker().number().numberBetween(1000, 9999)}@mail.com"
 
-    fun generatePassword() = Faker().internet().password(6, 10)
+    fun generatePassword() = Faker().internet().password(6, 10)!!
 
     fun generateCardDetails() = mapOf(
         "number" to "4444${faker.number().digits(12)}",

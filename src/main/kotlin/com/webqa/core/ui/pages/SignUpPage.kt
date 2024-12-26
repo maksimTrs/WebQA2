@@ -1,5 +1,6 @@
 package com.webqa.core.ui.pages
 
+import com.webqa.core.config.Configuration
 import com.webqa.core.ui.BasePage
 import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.WebDriver
@@ -11,7 +12,7 @@ import java.time.Duration
 
 class SignUpPage(driver: WebDriver) : BasePage(driver) {
     companion object {
-        const val URL = "https://webqa.mercdev.com/signup"
+        private var URL = "${Configuration.App.baseUrl}/signup"
     }
 
     @FindBy(id = "email")
@@ -26,29 +27,33 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
     @FindBy(css = "button[type='submit']")
     private lateinit var signUpButton: WebElement
 
+
     fun open() {
         driver.get(URL)
     }
 
-    fun enterEmail(email: String) {
+    private fun enterEmail(email: String) {
+        waitForElement(emailInput)
         emailInput.sendKeys(email)
     }
 
-    fun enterPassword(password: String) {
+    private fun enterPassword(password: String) {
+        waitForElement(passwordInput)
         passwordInput.sendKeys(password)
     }
 
-    fun enterConfirmPassword(password: String) {
+    private fun enterConfirmPassword(password: String) {
+        waitForElement(confirmPasswordInput)
         confirmPasswordInput.sendKeys(password)
     }
 
     fun isSignUpButtonEnabled(): Boolean {
+        waitForElement(signUpButton)
         return signUpButton.isEnabled
     }
 
     fun clickSignUpButton() {
-        WebDriverWait(driver, Duration.ofSeconds(10))
-            .until(ExpectedConditions.elementToBeClickable(signUpButton))
+        waitForElementToBeClickable(signUpButton)
         signUpButton.click()
     }
 
@@ -60,7 +65,7 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
 
     fun isAlertPresent(): Boolean {
         return try {
-            WebDriverWait(driver, Duration.ofSeconds(5))
+            WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
                 .until(ExpectedConditions.alertIsPresent())
             true
         } catch (e: TimeoutException) {
@@ -69,13 +74,13 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
     }
 
     fun getAlertText(): String {
-        val alert = WebDriverWait(driver, Duration.ofSeconds(3))
+        val alert = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
             .until(ExpectedConditions.alertIsPresent())
         return alert.text
     }
 
     fun acceptAlert() {
-        val alert = WebDriverWait(driver, Duration.ofSeconds(1))
+        val alert = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
             .until(ExpectedConditions.alertIsPresent())
         alert.accept()
     }
