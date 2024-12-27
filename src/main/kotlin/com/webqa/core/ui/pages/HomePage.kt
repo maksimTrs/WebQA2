@@ -48,7 +48,7 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
 
     fun waitForLoginComplete(expectedEmail: String) {
         val wait = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
-        wait.until { driver ->
+        wait.until {
             try {
                 val text = loggedInUserInfo.text.trim()
                 text.contains(expectedEmail)

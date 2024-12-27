@@ -47,7 +47,7 @@ object WebDriverFactory {
         }
         driverThreadLocal.set(driver)
         logger.info("Created ${browser.name} driver (${if (isRemoteExecution()) "remote" else "local"})")
-        return driver
+        return driverThreadLocal.get()
     }
 
     fun getDriver(): WebDriver {
