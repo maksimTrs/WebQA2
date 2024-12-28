@@ -4,10 +4,12 @@ import com.webqa.core.config.Configuration
 import com.webqa.core.ui.BasePage
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
+import org.openqa.selenium.WebDriverException
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.FindBy
 import org.openqa.selenium.support.ui.ExpectedConditions
 import org.openqa.selenium.support.ui.WebDriverWait
+import org.slf4j.LoggerFactory
 import java.time.Duration
 
 class HomePage(driver: WebDriver) : BasePage(driver) {
@@ -47,13 +49,12 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
     }
 
     fun waitForLoginComplete(expectedEmail: String) {
-        val wait = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
-        wait.until {
+        getFluentWaitInstance().until {
             try {
                 val text = loggedInUserInfo.text.trim()
                 text.contains(expectedEmail)
-            } catch (e: Exception) {
-                false
+            } catch (e: WebDriverException) {
+                LoggerFactory.getLogger(this::class.java).error("Error waiting for login via $expectedEmail: ${e.message}")
             }
         }
     }

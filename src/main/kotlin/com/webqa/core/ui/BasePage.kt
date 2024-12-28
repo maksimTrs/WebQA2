@@ -5,6 +5,7 @@ import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.PageFactory
 import org.openqa.selenium.support.ui.ExpectedConditions
+import org.openqa.selenium.support.ui.FluentWait
 import org.openqa.selenium.support.ui.WebDriverWait
 import java.time.Duration
 
@@ -29,4 +30,11 @@ abstract class BasePage(protected val driver: WebDriver) {
                 (elements.all { it.isDisplayed })
             }
     }
+
+    protected fun getFluentWaitInstance(): FluentWait<WebDriver> =
+        FluentWait(driver)
+            .withTimeout(Duration.ofSeconds(Configuration.timeout.toLong()))
+            .pollingEvery(Duration.ofSeconds(2))
+            .ignoring(NoSuchElementException::class.java)
+
 }
