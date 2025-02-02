@@ -35,3 +35,14 @@ services:
       - SE_VNC_NO_PASSWORD=1
     ports:
       - "7901:7900"
+
+  wiremock:
+    image: wiremock/wiremock:3.10.0
+    container_name: wiremock
+    ports:
+      - "${WIREMOCK_PORT}:${WIREMOCK_PORT}"
+    volumes:
+      - ./wiremock/mappings:/home/wiremock/mappings
+      - ./wiremock/files:/home/wiremock/__files
+    environment:
+      - WIREMOCK_OPTIONS=--port ${WIREMOCK_PORT} --verbose --global-response-templating --local-response-templating

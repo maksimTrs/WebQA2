@@ -9,11 +9,22 @@ The framework uses TestNG for test execution, Selenium WebDriver for UI testing,
 - **Language**: Kotlin
 - **Build Tool**: Gradle
 - **Testing Framework**: TestNG
-- **UI Testing**: Selenium WebDriver
-- **API Testing**: REST Assured
+- **UI Testing**:
+    - Selenium WebDriver 4.16.1
+    - Selenium Grid
+- **API Testing & Mocking**:
+    - REST Assured
+    - WireMock 3.10.0
+        - Standalone server
+        - Docker container
+        - Response templating
+        - Stateful scenarios
 - **Assertions**: AssertJ
 - **Reporting**: Allure
-- **Configuration**: Typesafe Config
+- **Configuration**:
+    - Typesafe Config
+    - Docker Compose
+    - Environment variables
 - **Data Generation**: DataFaker
 - **Logging**: Logback + SLF4J
 - **API Client Generation**: OpenAPI Generator
@@ -34,6 +45,12 @@ src
         ├── BaseApiTest.kt    # Base class for API tests
         ├── BaseTest.kt       # Base class for all tests
         ├── api               # API test implementations
+        │   └── wiremock      # WireMock test utilities
+        │       ├── HttpStatusExtensions.kt    # HTTP status code constants
+        │       ├── WireMockResponseBuilder.kt # Fluent response builder
+        │       ├── WireMockResponses.kt       # Response templates
+        │       ├── WireMockSupport.kt         # WireMock setup/teardown
+        │       └── SignUpWireMockTest.kt      # WireMock test examples
         └── ui                # UI test implementations
 
 Configuration Files:
@@ -41,13 +58,17 @@ Configuration Files:
 │   ├── allure.properties     # Allure reporting configuration
 │   ├── application.conf      # Application configuration
 │   └── petstore-openapi.json # OpenAPI specification
-└── src/test/resources
-    ├── api-tests.xml         # API tests configuration
-    ├── logback-test.xml      # Test logging configuration
-    ├── regression.xml        # Full regression suite
-    ├── smoke.xml             # Smoke test suite
-    ├── testNg.xml            # Main TestNG configuration
-    └── ui-tests.xml          # UI tests configuration (parallel)
+├── src/test/resources
+│   ├── api-tests.xml         # API tests configuration
+│   ├── logback-test.xml      # Test logging configuration
+│   ├── regression.xml        # Full regression suite
+│   ├── smoke.xml             # Smoke test suite
+│   ├── testNg.xml           # Main TestNG configuration
+│   └── ui-tests.xml         # UI tests configuration (parallel)
+├── wiremock                  # WireMock resources
+│   ├── mappings             # WireMock stub mappings
+│   └── __files             # WireMock response files
+└── .env                     # Environment configuration for Docker
 ```
 
 ## 🚀 Running Tests
@@ -178,10 +199,52 @@ Execution mode:
 
 ### API Tests
 
-- Authentication endpoints
-- Product API operations
-- Pet store API operations (using OpenAPI generated client)
-- Order management
+The framework supports two types of API testing approaches:
+
+1. **Real API Testing**
+    - Direct integration with actual API endpoints
+    - Uses REST Assured for HTTP requests
+    - Suitable for integration and end-to-end testing
+
+2. **Mock API Testing (WireMock)**
+    - Simulates API responses for controlled testing
+    - Supports various scenarios:
+        - Success/failure responses
+        - Network delays
+        - Rate limiting
+        - Custom response templates
+
+#### Running WireMock Tests
+
+1. Configure WireMock (optional):
+    - Edit `.env` file to change WireMock port (default: 9999)
+    - Update `application.conf` mock section if needed
+
+2. Start WireMock container:
+
+```bash
+docker-compose up -d wiremock
+```
+
+3. Run WireMock tests:
+
+```bash
+./gradlew clean test --tests "com.webqa.tests.api.SignUpWireMockTest"
+```
+
+4. Access WireMock Admin UI:
+    - URL: `http://localhost:9999/__admin`
+    - View registered stubs
+    - Check request history
+    - Manage mappings
+
+#### WireMock Features
+
+- **Response Templates**: Pre-defined response patterns in `WireMockResponses`
+- **Builder Pattern**: Fluent API for creating responses via `WireMockResponseBuilder`
+- **Scenario Testing**: Support for stateful behavior simulation
+- **Network Conditions**: Ability to test delays and timeouts
+- **Docker Integration**: Runs in containerized environment for consistency
 
 ## 📊 Test Reports
 

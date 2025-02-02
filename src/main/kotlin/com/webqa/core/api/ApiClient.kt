@@ -9,9 +9,9 @@ import io.restassured.filter.log.ResponseLoggingFilter
 import io.restassured.http.ContentType
 import io.restassured.specification.RequestSpecification
 
-abstract class ApiClient {
+abstract class ApiClient(baseUrl: String = Configuration.Api.baseUrl) {
     protected val requestSpec: RequestSpecification = RequestSpecBuilder()
-        .setBaseUri(Configuration.Api.baseUrl)
+        .setBaseUri(baseUrl)
         .setContentType(ContentType.JSON)
         .addFilter(RequestLoggingFilter())
         .addFilter(ResponseLoggingFilter())

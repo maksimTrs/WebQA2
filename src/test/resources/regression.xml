@@ -30,6 +30,7 @@
             <class name="com.webqa.tests.api.ProductApiTest"/>
             <class name="com.webqa.tests.api.SignUpAPITest"/>
             <class name="com.webqa.tests.api.pets.PetApiTest"/>
+            <class name="com.webqa.tests.api.SignUpWireMockTest"/>
         </classes>
     </test>
 </suite>

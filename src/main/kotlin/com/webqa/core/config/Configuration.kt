@@ -20,4 +20,19 @@ object Configuration {
         val baseUrl: String = config.getString("api.baseUrl")
         val timeout: Int = config.getInt("api.timeout")
     }
+
+    object Mock {
+        object WireMock {
+            val host: String = config.getString("mock.wiremock.host")
+            val port: Int = config.getInt("mock.wiremock.port")
+            val mappingsDir: String = config.getString("mock.wiremock.mappingsDir")
+            val filesDir: String = config.getString("mock.wiremock.filesDir")
+
+            object Options {
+                val verbose: Boolean = config.getBoolean("mock.wiremock.options.verbose")
+                val globalResponseTemplating: Boolean = config.getBoolean("mock.wiremock.options.globalResponseTemplating")
+                val localResponseTemplating: Boolean = config.getBoolean("mock.wiremock.options.localResponseTemplating")
+            }
+        }
+    }
 }

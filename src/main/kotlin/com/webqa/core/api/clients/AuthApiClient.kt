@@ -3,13 +3,14 @@ package com.webqa.core.api.clients
 import com.webqa.core.api.ApiClient
 import com.webqa.core.api.models.SignUpRequest
 import com.webqa.core.api.models.SignUpResponse
+import com.webqa.core.config.Configuration
 import io.restassured.module.kotlin.extensions.Extract
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import org.apache.http.HttpStatus.SC_OK
 
-class AuthApiClient : ApiClient(), IAuthApiClient<String, SignUpResponse> {
+class AuthApiClient(baseUrl: String? = null) : ApiClient(baseUrl ?: Configuration.Api.baseUrl), IAuthApiClient<String, SignUpResponse> {
 
     companion object {
         private const val LOGIN_ENDPOINT = "/user/login"
