@@ -10,11 +10,11 @@ The framework uses TestNG for test execution, Selenium WebDriver for UI testing,
 - **Build Tool**: Gradle
 - **Testing Framework**: TestNG
 - **UI Testing**:
-    - Selenium WebDriver 4.16.1
+    - Selenium WebDriver
     - Selenium Grid
 - **API Testing & Mocking**:
     - REST Assured
-    - WireMock 3.10.0
+    - WireMock 
         - Standalone server
         - Docker container
         - Response templating
@@ -63,12 +63,9 @@ Configuration Files:
 │   ├── logback-test.xml      # Test logging configuration
 │   ├── regression.xml        # Full regression suite
 │   ├── smoke.xml             # Smoke test suite
-│   ├── testNg.xml           # Main TestNG configuration
-│   └── ui-tests.xml         # UI tests configuration (parallel)
-├── wiremock                  # WireMock resources
-│   ├── mappings             # WireMock stub mappings
-│   └── __files             # WireMock response files
-└── .env                     # Environment configuration for Docker
+│   ├── testNg.xml            # Main TestNG configuration
+│   └── ui-tests.xml          # UI tests configuration (parallel)
+└── .env                      # Environment configuration for Docker
 ```
 
 ## 🚀 Running Tests
