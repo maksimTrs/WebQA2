@@ -15,7 +15,6 @@ The framework uses TestNG for test execution, Selenium WebDriver for UI testing,
 - **API Testing & Mocking**:
     - REST Assured
     - WireMock 
-        - Standalone server
         - Docker container
         - Response templating
         - Stateful scenarios
