@@ -214,7 +214,7 @@ The framework supports two types of API testing approaches:
 #### Running WireMock Tests
 
 1. Configure WireMock (optional):
-    - Edit `.env` file to change WireMock port (default: 9999)
+    - Edit `.env` file to change WireMock port (default: **9999**)
     - Update `application.conf` mock section if needed
 
 2. Start WireMock container:
@@ -229,11 +229,9 @@ docker-compose up -d wiremock
 ./gradlew clean test --tests "com.webqa.tests.api.SignUpWireMockTest"
 ```
 
-4. Access WireMock Admin UI:
-    - URL: `http://localhost:9999/__admin`
-    - View registered stubs
-    - Check request history
-    - Manage mappings
+4. Access WireMock UI:
+    - URL: `http://localhost:9999/__admin/health`
+
 
 #### WireMock Features
 
@@ -266,7 +264,7 @@ The framework uses Typesafe Config for configuration management. Main configurat
 - `application.conf`: Main configuration file
 - `petstore-openapi.json`: OpenAPI spec file
 - `logback-test.xml`: Logging configuration
-- `docker-compose.yml`: Docker file to run FF and Chrome instances via selenium/hub:4.16.1
+- `docker-compose.yml`: Docker file to run FF and Chrome instances via selenium/hub and Wiremock service
 
 ## 🧪 Test Data Management
 
