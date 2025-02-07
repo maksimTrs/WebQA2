@@ -64,7 +64,8 @@ Configuration Files:
 │   ├── smoke.xml             # Smoke test suite
 │   ├── testNg.xml            # Main TestNG configuration
 │   └── ui-tests.xml          # UI tests configuration (parallel)
-└── .env                      # Environment configuration for Docker
+├── .env                      # Environment configuration for Docker
+└── docker-compose.yml        # FF, Chrome browser and Wiremock services
 ```
 
 ## 🚀 Running Tests
