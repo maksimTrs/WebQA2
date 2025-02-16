@@ -60,6 +60,9 @@ dependencies {
     implementation("com.squareup.moshi:moshi:1.14.0")
     // For Kotlin support
     implementation("com.squareup.moshi:moshi-kotlin:1.14.0")
+
+    // Swagger UI
+    implementation("org.webjars:swagger-ui:5.10.3")
 }
 
 // OpenAPI Generator configuration

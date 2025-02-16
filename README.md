@@ -241,6 +241,39 @@ docker-compose up -d wiremock
 - **Network Conditions**: Ability to test delays and timeouts
 - **Docker Integration**: Runs in containerized environment for consistency
 
+## 📚 Swagger UI Documentation
+
+To view the OpenAPI specification in Swagger UI:
+
+1. Compile the project:
+
+```bash
+./gradlew compileJava
+```
+
+2. Start the Swagger UI server:
+
+```bash
+java -cp build/classes/java/main com.webqa.swagger.SwaggerServer
+```
+
+The server will start on port 9000 (or the next available port up to 9004).
+
+3. Open the Swagger UI in your browser:
+
+```
+http://localhost:9000
+```
+
+4. To stop the server:
+    - Press `Ctrl+C` in the terminal where the server is running
+
+The Swagger UI provides an interactive interface to:
+
+- Browse all API endpoints
+- View request/response schemas
+- Read API documentation
+
 ## 📊 Test Reports
 
 The framework uses Allure for test reporting. After test execution:
