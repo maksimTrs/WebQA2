@@ -27,6 +27,7 @@ The framework uses TestNG for test execution, Selenium WebDriver for UI testing,
 - **Data Generation**: DataFaker
 - **Logging**: Logback + SLF4J
 - **API Client Generation**: OpenAPI Generator
+- **Code Security Analysis**: Detekt
 
 ## 🗂 Project Structure
 
@@ -302,3 +303,41 @@ The framework uses Typesafe Config for configuration management. Main configurat
 ## 🧪 Test Data Management
 
 - Uses DataFaker for generating test data
+
+## 🔒 Code Security Analysis
+
+The framework includes Detekt, a static code analysis tool for Kotlin with a focus on security. The implementation helps to identify potential code vulnerabilities, anti-patterns, and security issues.
+
+### Running Security Analysis
+
+Run the security analysis with the following command:
+
+```bash
+./gradlew detektSecurityCheck
+```
+
+By default, this task will:
+- Analyze all Kotlin code in the project
+- Generate reports in HTML, XML, and SARIF formats in `build/reports/detekt/`
+- Fail the build if any issues are found (maxIssues is set to 0)
+
+To run the check without failing the build on issues:
+
+```bash
+./gradlew detektSecurityCheck -Ddetekt.maxIssues=100
+```
+
+### Security Rules
+
+The security check focuses on:
+- Exception handling issues (too generic exceptions, swallowed exceptions)
+- Potential bugs (unsafe casts, null safety issues, etc.)
+- API design issues (public visibility where unnecessary)
+- Coroutine safety issues
+
+### Configuration
+
+The Detekt configuration files are located in:
+- `config/detekt/detekt.yml` - Main configuration
+- `config/detekt/detekt-security.yml` - Security-focused rules
+- `config/detekt/baseline.xml` - Baseline of accepted issues

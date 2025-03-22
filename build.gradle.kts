@@ -4,6 +4,7 @@ plugins {
     kotlin("jvm") version "1.9.0"
     id("io.qameta.allure") version "2.11.2"
     id("org.openapi.generator") version "7.9.0"
+    id("io.gitlab.arturbosch.detekt") version "1.23.5"
 }
 
 group = "com.webqa"
@@ -63,6 +64,14 @@ dependencies {
 
     // Swagger UI
     implementation("org.webjars:swagger-ui:5.10.3")
+
+    // Detekt
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.5")
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-libraries:1.23.5") 
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-ruleauthors:1.23.5")
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-complexity:1.23.5")
+    // Security rules
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-coroutines:1.23.5")
 }
 
 // OpenAPI Generator configuration
@@ -87,7 +96,6 @@ tasks.test {
     }
 }
 
-
 // Add generated sources to the main source set
 sourceSets {
     main {
@@ -102,9 +110,33 @@ sourceSets {
         }*/
 }
 
-
 allure {
     version = "2.22.2"
+}
+
+// Detekt configuration
+detekt {
+    buildUponDefaultConfig = true
+    allRules = false
+    config.setFrom(files("$projectDir/config/detekt/detekt.yml"))
+    baseline = file("$projectDir/config/detekt/baseline.xml")
+    parallel = true
+}
+
+tasks.register<io.gitlab.arturbosch.detekt.Detekt>("detektSecurityCheck") {
+    description = "Run security focused detekt checks"
+    setSource(files("src/main/kotlin", "src/test/kotlin"))
+    config.setFrom(files("$projectDir/config/detekt/detekt-security.yml"))
+    reports {
+        html.required.set(true)
+        xml.required.set(true)
+        txt.required.set(false)
+        sarif.required.set(true)
+    }
+    include("**/*.kt")
+    include("**/*.kts")
+    exclude("**/build/**")
+    exclude("**/resources/**")
 }
 
 // Ensure OpenAPI classes are generated before compiling
