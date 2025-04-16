@@ -1,10 +1,8 @@
 package com.webqa.tests
 
-
 import com.webqa.core.config.Configuration
 import com.webqa.core.driver.WebDriverFactory
 import io.qameta.allure.Allure
-import io.qameta.allure.Step
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.WebDriver
@@ -24,58 +22,45 @@ abstract class BaseTest {
     protected val userPass = Configuration.App.userPass
 
     @Parameters("browser")
-    @BeforeMethod
-    @Step("Initialize WebDriver")
+    @BeforeMethod(alwaysRun = true)
     fun setUp(@Optional browser: String?) {
-        val browserType = WebDriverFactory.Browser.valueOf(browser?.uppercase() ?: Configuration.browser.uppercase())
-        logger.info("Initializing test with browser: ${browserType.name}")
-
-        WebDriverFactory.createDriver(browserType).also {
-            if (it is RemoteWebDriver) {
-                val capabilities = it.capabilities
-                logger.info("Started test on ${capabilities.browserName} ${capabilities.browserVersion}")
+        val browserName = browser?.uppercase() ?: Configuration.browser.uppercase()
+        val browserType = WebDriverFactory.Browser.valueOf(browserName)
+        logger.info("Initializing test with browser: {}", browserType)
+        WebDriverFactory.createDriver(browserType).also { driver ->
+            if (driver is RemoteWebDriver) {
+                logger.info(
+                    "Started test on {} {}",
+                    driver.capabilities.browserName,
+                    driver.capabilities.browserVersion
+                )
             }
         }
     }
 
     @AfterMethod(alwaysRun = true)
-    @Step("Close WebDriver")
-    fun tearDown(testResult: ITestResult) {
-        runCatching {
-            when (testResult.status) {
-                ITestResult.FAILURE -> attachScreenshot()
+    fun tearDown(result: ITestResult) {
+        if (result.status == ITestResult.FAILURE) {
+            try {
+                val screenshot = (getDriver() as TakesScreenshot).getScreenshotAs(OutputType.BYTES)
+                Allure.addAttachment(
+                    "Screenshot on failure",
+                    "image/png",
+                    ByteArrayInputStream(screenshot),
+                    "png"
+                )
+            } catch (e: Exception) {
+                logger.error("Failed to attach screenshot", e)
             }
-        }.onFailure {
-            logger.error("Failed to capture failure evidence: ${it.message}")
-        }.also {
-            runCatching {
-                WebDriverFactory.quitDriver()
-            }.onFailure {
-                logger.error("Failed to quit driver: ${it.message}")
-            }
+        }
+        try {
+            WebDriverFactory.quitDriver()
+        } catch (e: Exception) {
+            logger.error("Failed to quit driver", e)
         }
     }
 
     protected fun getDriver(): WebDriver {
         return WebDriverFactory.getDriver()
-    }
-
-
-    private fun attachScreenshot() {
-        runCatching {
-            val screenshot = captureScreenshot()
-            Allure.addAttachment(
-                "Screenshot on failure",
-                "image/png",
-                ByteArrayInputStream(screenshot),
-                "png"
-            )
-        }.onFailure {
-            logger.error("Failed to attach screenshot: ${it.message}")
-        }
-    }
-
-    private fun captureScreenshot(): ByteArray {
-        return (getDriver() as TakesScreenshot).getScreenshotAs(OutputType.BYTES)
     }
 }

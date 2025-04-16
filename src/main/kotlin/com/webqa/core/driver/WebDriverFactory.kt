@@ -19,6 +19,7 @@ object WebDriverFactory {
     private const val DEFAULT_WINDOW_WIDTH = 1920
     private const val DEFAULT_WINDOW_HEIGHT = 1080
     private const val DEFAULT_SELENIUM_GRID_URL = "http://localhost:4444/wd/hub"
+    private val isRemoteExecution: Boolean by lazy { System.getProperty("remote", Configuration.isRemote).toBoolean() }
     private val seleniumGridUrl = System.getProperty("selenium.grid.url", DEFAULT_SELENIUM_GRID_URL)
 
     enum class Browser(val capabilities: () -> MutableCapabilities) {
@@ -40,14 +41,29 @@ object WebDriverFactory {
         browser: Browser,
         windowSize: Dimension = Dimension(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT)
     ): WebDriver {
-        val driver = if (isRemoteExecution()) {
-            createRemoteDriver(browser, windowSize)
+        val remote = isRemoteExecution
+        val driver = if (remote) {
+            logger.info("Creating remote driver for browser: ${browser.name}")
+            RemoteWebDriver(URL(seleniumGridUrl), browser.capabilities())
         } else {
-            createLocalDriver(browser, windowSize)
+            logger.info("Creating local driver for browser: ${browser.name}")
+            when (browser) {
+                Browser.CHROME -> {
+                    WebDriverManager.chromedriver().setup()
+                    ChromeDriver(browser.capabilities() as ChromeOptions)
+                }
+                Browser.FIREFOX -> {
+                    WebDriverManager.firefoxdriver().setup()
+                    FirefoxDriver(browser.capabilities() as FirefoxOptions)
+                }
+            }
+        }.apply {
+            manage().window().size = windowSize
         }
+
         driverThreadLocal.set(driver)
-        logger.info("Created ${browser.name} driver (${if (isRemoteExecution()) "remote" else "local"})")
-        return driverThreadLocal.get()
+        logger.info("Created ${browser.name} driver (${if (remote) "remote" else "local"})")
+        return driver
     }
 
     fun getDriver(): WebDriver {
@@ -64,32 +80,5 @@ object WebDriverFactory {
                 driverThreadLocal.remove()
             }
         }
-    }
-
-    private fun createRemoteDriver(browser: Browser, windowSize: Dimension): WebDriver {
-        logger.info("Creating remote driver for browser: ${browser.name}")
-        return RemoteWebDriver(URL(seleniumGridUrl), browser.capabilities()).apply {
-            manage().window().size = windowSize
-        }
-    }
-
-    private fun createLocalDriver(browser: Browser, windowSize: Dimension): WebDriver {
-        return when (browser) {
-            Browser.CHROME -> {
-                WebDriverManager.chromedriver().setup()
-                ChromeDriver(browser.capabilities() as ChromeOptions)
-            }
-
-            Browser.FIREFOX -> {
-                WebDriverManager.firefoxdriver().setup()
-                FirefoxDriver(browser.capabilities() as FirefoxOptions)
-            }
-        }.apply {
-            manage().window().size = windowSize
-        }
-    }
-
-    private fun isRemoteExecution(): Boolean {
-        return System.getProperty("remote", Configuration.isRemote).toBoolean()
     }
 }
