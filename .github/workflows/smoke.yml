@@ -74,7 +74,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Start Selenium Grid
-        run: docker-compose up -d selenium-hub chrome
+        run: docker compose up -d selenium-hub chrome
 
       - name: Wait for Selenium Grid to be ready
         run: |
@@ -108,4 +108,4 @@ jobs:
 
       - name: Stop Selenium Grid
         if: always()
-        run: docker-compose down
+        run: docker compose down
