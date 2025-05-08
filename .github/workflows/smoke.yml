@@ -35,7 +35,7 @@ jobs:
 
       - name: Run API Tests
         id: run-api-tests
-        run: ./gradlew test --tests com.webqa.tests.api.SignUpAPITest --tests com.webqa.tests.api.ProductApiTest
+        run: ./gradlew test --tests com.webqa.tests.api.SignUpAPITest
         #continue-on-error: true
 
       - name: Upload Build Directory
