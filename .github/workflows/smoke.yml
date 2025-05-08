@@ -30,6 +30,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-gradle-
 
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Run API Tests
         id: run-api-tests
         run: ./gradlew test --tests com.webqa.tests.api.SignUpAPITest --tests com.webqa.tests.api.ProductApiTest
@@ -70,6 +73,9 @@ jobs:
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: |
             ${{ runner.os }}-gradle-
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
 
       - name: Start Selenium Grid
         run: docker-compose up -d selenium-hub chrome
