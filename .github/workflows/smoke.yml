@@ -38,10 +38,6 @@ jobs:
         run: ./gradlew test --tests com.webqa.tests.api.SignUpAPITest --tests com.webqa.tests.api.ProductApiTest
         #continue-on-error: true
 
-      - name: Generate Allure Results
-        if: failure() && steps.run-api-tests.outcome != 'success'
-        run: ./gradlew allureReport
-
       - name: Upload Build Directory
         if: failure() && steps.run-api-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
@@ -102,10 +98,6 @@ jobs:
         id: run-ui-tests
         run: ./gradlew test --tests com.webqa.tests.ui.LoginTest --tests com.webqa.tests.ui.SignUpUITest -Dremote=true
         #continue-on-error: true
-
-      - name: Generate Allure Results
-        if: failure() && steps.run-ui-tests.outcome != 'success'
-        run: ./gradlew allureReport
 
       - name: Upload Build Directory
         if: failure() && steps.run-ui-tests.outcome != 'success'

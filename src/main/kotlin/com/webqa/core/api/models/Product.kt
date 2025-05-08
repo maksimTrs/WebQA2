@@ -1,5 +1,6 @@
 package com.webqa.core.api.models
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
 data class Product(
@@ -36,11 +37,12 @@ data class Order(
     val totalSum: Int
 )
 
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class User(
     val id: Int,
     val email: String
 )
-
 data class ProductOrder(
     val product: Product,
     val quantity: Int

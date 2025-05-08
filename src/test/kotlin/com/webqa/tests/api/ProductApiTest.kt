@@ -21,7 +21,7 @@ class ProductApiTest : BaseApiTest() {
         private const val DEFAULT_PRODUCT_ID = "1"
         private const val DEFAULT_PRODUCT_QUANTITY = 1
         private const val EXPECTED_TOTAL_SUM = 100
-        private const val SUCCESSFUL_PURCHASE_MESSAGE = "The 100usd purchase is successfully completed"
+        private const val SUCCESSFUL_PURCHASE_MESSAGE = "Покупка на сумму 100р. произведена успешно"
     }
 
     @BeforeClass
