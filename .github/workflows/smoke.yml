@@ -2,7 +2,7 @@ name: Smoke Tests
 
 on:
   push:
-    branches: [ main, dev* ]
+    branches: [ main, master, dev* ]
   workflow_dispatch:
 
 jobs:
