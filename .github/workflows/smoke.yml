@@ -38,18 +38,24 @@ jobs:
         run: ./gradlew test --tests com.webqa.tests.api.SignUpAPITest --tests com.webqa.tests.api.ProductApiTest
         #continue-on-error: true
 
-      - name: Generate Allure Report
+      - name: Generate Allure Results
         if: failure() && steps.run-api-tests.outcome != 'success'
-        run: |
-          ./gradlew allureReport
-          ./gradlew allureAggregateReport
+        run: ./gradlew allureReport
+
+      - name: Allure Report action
+        if: failure() && steps.run-api-tests.outcome != 'success'
+        uses: simple-elf/allure-report-action@master
+        with:
+          allure_results: build/allure-results
+          allure_history: allure-history
+          keep_reports: 3
 
       - name: Upload Allure Report
         if: failure() && steps.run-api-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
           name: api-allure-report
-          path: build/reports/allure-report
+          path: allure-report
 
   ui-tests:
     name: UI Tests
@@ -105,18 +111,24 @@ jobs:
         run: ./gradlew test --tests com.webqa.tests.ui.LoginTest --tests com.webqa.tests.ui.SignUpUITest -Dremote=true
         #continue-on-error: true
 
-      - name: Generate Allure Report
+      - name: Generate Allure Results
         if: failure() && steps.run-ui-tests.outcome != 'success'
-        run: |
-          ./gradlew allureReport
-          ./gradlew allureAggregateReport
+        run: ./gradlew allureReport
+
+      - name: Allure Report action
+        if: failure() && steps.run-ui-tests.outcome != 'success'
+        uses: simple-elf/allure-report-action@master
+        with:
+          allure_results: build/allure-results
+          allure_history: allure-history
+          keep_reports: 20
 
       - name: Upload Allure Report
         if: failure() && steps.run-ui-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
           name: ui-allure-report
-          path: build/reports/allure-report
+          path: allure-report
 
       - name: Stop Selenium Grid
         if: always()
