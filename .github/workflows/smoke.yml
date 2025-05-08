@@ -42,20 +42,12 @@ jobs:
         if: failure() && steps.run-api-tests.outcome != 'success'
         run: ./gradlew allureReport
 
-      - name: Allure Report action
-        if: failure() && steps.run-api-tests.outcome != 'success'
-        uses: simple-elf/allure-report-action@master
-        with:
-          allure_results: build/allure-results
-          allure_history: allure-history
-          keep_reports: 3
-
-      - name: Upload Allure Report
+      - name: Upload Build Directory
         if: failure() && steps.run-api-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: api-allure-report
-          path: allure-report
+          name: api-build-directory
+          path: build
 
   ui-tests:
     name: UI Tests
@@ -115,20 +107,12 @@ jobs:
         if: failure() && steps.run-ui-tests.outcome != 'success'
         run: ./gradlew allureReport
 
-      - name: Allure Report action
-        if: failure() && steps.run-ui-tests.outcome != 'success'
-        uses: simple-elf/allure-report-action@master
-        with:
-          allure_results: build/allure-results
-          allure_history: allure-history
-          keep_reports: 20
-
-      - name: Upload Allure Report
+      - name: Upload Build Directory
         if: failure() && steps.run-ui-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: ui-allure-report
-          path: allure-report
+          name: ui-build-directory
+          path: build
 
       - name: Stop Selenium Grid
         if: always()
