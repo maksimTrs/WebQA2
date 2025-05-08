@@ -40,14 +40,16 @@ jobs:
 
       - name: Generate Allure Report
         if: failure() && steps.run-api-tests.outcome != 'success'
-        run: ./gradlew allureReport
+        run: |
+          ./gradlew allureReport
+          ./gradlew allureAggregateReport
 
       - name: Upload Allure Report
         if: failure() && steps.run-api-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
           name: api-allure-report
-          path: build
+          path: build/reports/allure-report
 
   ui-tests:
     name: UI Tests
@@ -105,14 +107,16 @@ jobs:
 
       - name: Generate Allure Report
         if: failure() && steps.run-ui-tests.outcome != 'success'
-        run: ./gradlew allureReport
+        run: |
+          ./gradlew allureReport
+          ./gradlew allureAggregateReport
 
       - name: Upload Allure Report
         if: failure() && steps.run-ui-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
           name: ui-allure-report
-          path: build
+          path: build/reports/allure-report
 
       - name: Stop Selenium Grid
         if: always()
