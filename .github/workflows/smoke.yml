@@ -74,11 +74,11 @@ jobs:
         run: chmod +x ./gradlew
 
       # Используем GitHub Actions встроенное кеширование вместо устаревшего сервиса
-      - name: Cache Docker images
-        uses: actions/cache@v4
-        with:
-          path: /tmp/docker-images
-          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.yml') }}
+      # - name: Cache Docker images
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: /tmp/docker-images
+      #     key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.yml') }}
 
       - name: Start Selenium Grid
         run: docker compose up -d selenium-hub chrome

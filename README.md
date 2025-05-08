@@ -54,19 +54,21 @@ src
         └── ui                # UI test implementations
 
 Configuration Files:
-├── src/main/resources
-│   ├── allure.properties     # Allure reporting configuration
-│   ├── application.conf      # Application configuration
-│   └── petstore-openapi.json # OpenAPI specification
-├── src/test/resources
-│   ├── api-tests.xml         # API tests configuration
-│   ├── logback-test.xml      # Test logging configuration
-│   ├── regression.xml        # Full regression suite
-│   ├── smoke.xml             # Smoke test suite
-│   ├── testNg.xml            # Main TestNG configuration
-│   └── ui-tests.xml          # UI tests configuration (parallel)
-├── .env                      # Environment configuration for Docker
-└── docker-compose.yml        # FF, Chrome browser and Wiremock services
+├─ src/main/resources
+│   ├─ allure.properties     # Allure reporting configuration
+│   ├─ application.conf      # Application configuration
+│   └─ petstore-openapi.json # OpenAPI specification
+├─ src/test/resources
+│   ├─ api-tests.xml         # API tests configuration
+│   ├─ logback-test.xml      # Test logging configuration
+│   ├─ regression.xml        # Full regression suite
+│   ├─ smoke.xml             # Smoke test suite
+│   ├─ testNg.xml            # Main TestNG configuration
+│   └─ ui-tests.xml          # UI tests configuration (parallel)
+├─ .github/workflows
+│   └─ smoke.yml             # GitHub Actions workflow for CI/CD
+├─ .env                      # Environment configuration for Docker
+└─ docker-compose.yml        # FF, Chrome browser and Wiremock services
 ```
 
 ## 🚀 Running Tests
@@ -77,6 +79,29 @@ Configuration Files:
 2. Gradle installed (or use the included Gradle wrapper)
 3. Docker installed (for remote execution)
 4. Browsers installed (for local execution)
+
+### Continuous Integration with GitHub Actions
+
+The project includes GitHub Actions workflows for automated testing:
+
+#### Smoke Tests Workflow
+
+Located in `.github/workflows/smoke.yml`, this workflow:
+
+- Runs on push to main, master, and dev* branches
+- Can be triggered manually via GitHub UI
+- Executes in two sequential jobs:
+  1. **API Tests**: Runs SignUpAPITest
+  2. **UI Tests**: Runs LoginTest and SignUpUITest using Selenium Grid with Chrome
+- Uses caching for Gradle dependencies to speed up builds
+- Uploads build artifacts for failed tests for easier debugging
+- Automatically starts and stops Selenium Grid in Docker containers
+
+To view test results:
+1. Go to the Actions tab in your GitHub repository
+2. Select the latest workflow run
+3. Download artifacts for any failed tests
+4. For UI test failures with Allure reports, run `allure serve build/allure-results` locally
 
 ### Running UI Tests
 
