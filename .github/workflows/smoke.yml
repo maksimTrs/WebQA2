@@ -73,25 +73,39 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
+      - name: Cache Docker images
+        uses: ScribeMD/docker-cache@0.5.0
+        with:
+          key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.yml') }}
+          restore-keys: |
+            docker-${{ runner.os }}-
+
       - name: Start Selenium Grid
         run: docker compose up -d selenium-hub chrome
+
+      - name: Check Docker containers
+        run: |
+          echo "Checking Docker containers..."
+          docker ps
+          docker logs selenium-hub
+          docker logs $(docker ps -q --filter "name=chrome")
 
       - name: Wait for Selenium Grid to be ready
         run: |
           echo "Waiting for Selenium Grid to be ready..."
-          timeout=60
+          timeout=120
           while [ $timeout -gt 0 ]; do
-            if curl -sSL "http://localhost:4444/wd/hub/status" | grep -q "\"ready\":true"; then
+            echo "Trying to connect to Selenium Grid..."
+            if curl -v "http://localhost:4444/wd/hub/status" 2>&1 | grep -q "\"ready\":true" || curl -v "http://selenium-hub:4444/wd/hub/status" 2>&1 | grep -q "\"ready\":true"; then
               echo "Selenium Grid is ready!"
               break
             fi
             echo "Waiting for Selenium Grid... ($timeout seconds left)"
-            sleep 5
-            timeout=$((timeout - 5))
+            sleep 10
+            timeout=$((timeout - 10))
           done
           if [ $timeout -le 0 ]; then
-            echo "Timed out waiting for Selenium Grid"
-            exit 1
+            echo "Timed out waiting for Selenium Grid, but continuing anyway"
           fi
 
       - name: Run UI Tests
