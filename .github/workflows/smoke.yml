@@ -47,7 +47,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: api-allure-report
-          path: build/reports/allure-report/allureReport
+          path: build
 
   ui-tests:
     name: UI Tests
@@ -112,7 +112,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: ui-allure-report
-          path: build/reports/allure-report/allureReport
+          path: build
 
       - name: Stop Selenium Grid
         if: always()
