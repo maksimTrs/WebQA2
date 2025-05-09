@@ -1,0 +1,43 @@
+name: 'Setup Java and Gradle Environments with caches'
+description: 'Sets up Java, caches Gradle dependencies, and makes gradlew executable'
+inputs:
+  java-version:
+    description: 'Java version to set up'
+    required: false
+    default: '17'
+  distribution:
+    description: 'Java distribution to use'
+    required: false
+    default: 'temurin'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        # This ensures the checkout step is skipped if already performed
+        # in the calling workflow
+        fetch-depth: 0
+        if-no-files-found: ignore
+
+    - name: Set up JDK
+      uses: actions/setup-java@v4
+      with:
+        java-version: ${{ inputs.java-version }}
+        distribution: ${{ inputs.distribution }}
+
+    - name: Cache Gradle dependencies
+      uses: actions/cache@v4
+      id: gradle-cache
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Make gradlew executable
+      run: chmod +x ./gradlew
+      shell: bash

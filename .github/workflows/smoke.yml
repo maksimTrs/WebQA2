@@ -6,32 +6,36 @@ on:
   workflow_dispatch:
 
 jobs:
+  lint:
+    name: Lint Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Java and Gradle Environment
+        uses: ./.github/actions/java-setup
+
+      - name: Run Detekt Security Check
+        id: run-detekt
+        run: ./gradlew detektSecurityCheck
+        continue-on-error: true
+
+      - name: Upload Detekt Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: detekt-reports
+          path: build/reports/detekt
+
   api-tests:
     name: API Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        id: gradle-cache
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
+        
+      - name: Setup Java and Gradle Environment
+        uses: ./.github/actions/java-setup
 
       - name: Run API Tests
         id: run-api-tests
@@ -52,33 +56,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Cache Gradle dependencies
-        uses: actions/cache@v4
-        id: gradle-cache
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      # Используем GitHub Actions встроенное кеширование вместо устаревшего сервиса
-      # - name: Cache Docker images
-      #   uses: actions/cache@v4
-      #   with:
-      #     path: /tmp/docker-images
-      #     key: docker-${{ runner.os }}-${{ hashFiles('docker-compose.yml') }}
+        
+      - name: Setup Java and Gradle Environment
+        uses: ./.github/actions/java-setup
 
       - name: Start Selenium Grid
         run: docker compose up -d selenium-hub chrome
