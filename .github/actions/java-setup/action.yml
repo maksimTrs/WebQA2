@@ -15,17 +15,13 @@ runs:
   steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      with:
-        # This ensures the checkout step is skipped if already performed
-        # in the calling workflow
-        fetch-depth: 0
-        if-no-files-found: ignore
 
     - name: Set up JDK
       uses: actions/setup-java@v4
       with:
         java-version: ${{ inputs.java-version }}
         distribution: ${{ inputs.distribution }}
+        check-latest: false
 
     - name: Cache Gradle dependencies
       uses: actions/cache@v4
@@ -37,6 +33,7 @@ runs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
+        enableCrossOsArchive: false
 
     - name: Make gradlew executable
       run: chmod +x ./gradlew

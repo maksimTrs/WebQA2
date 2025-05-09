@@ -5,10 +5,17 @@ on:
     branches: [ main, master, dev* ]
   workflow_dispatch:
 
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
 jobs:
   lint:
     name: Lint Check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,10 +33,12 @@ jobs:
         with:
           name: detekt-reports
           path: build/reports/detekt
+          retention-days: 5
 
   api-tests:
     name: API Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,11 +57,13 @@ jobs:
         with:
           name: api-build-directory
           path: build
+          retention-days: 5
 
   ui-tests:
     name: UI Tests
     needs: api-tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -68,12 +79,14 @@ jobs:
           echo "Checking Docker containers..."
           docker ps
           docker logs selenium-hub
-          docker logs $(docker ps -q --filter "name=chrome")
+          CHROME_CONTAINER_ID=$(docker ps -q --filter "name=chrome")
+          echo "Chrome container ID: $CHROME_CONTAINER_ID"
+          docker logs "$CHROME_CONTAINER_ID"
 
       - name: Wait for Selenium Grid to be ready
+        timeout-minutes: 2
         run: |
           echo "Waiting for Selenium Grid to initialize..."
-          # Даем Selenium Grid время на инициализацию
           sleep 30
           echo "Checking Docker containers status:"
           docker ps
@@ -81,6 +94,7 @@ jobs:
 
       - name: Run UI Tests
         id: run-ui-tests
+        timeout-minutes: 20
         run: ./gradlew test --tests com.webqa.tests.ui.LoginTest --tests com.webqa.tests.ui.SignUpUITest -Dremote=true
         #continue-on-error: true
 
@@ -90,6 +104,7 @@ jobs:
         with:
           name: ui-build-directory
           path: build
+          retention-days: 5
 
       - name: Stop Selenium Grid
         if: always()
