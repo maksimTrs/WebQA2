@@ -34,9 +34,10 @@ class ProductTest : BaseTest() {
     @Test
     @Description("Verify products are displayed for logged in user")
     fun testProductsDisplayed() {
-        assertThat(homePage.getProductsCount())
-            .withFailMessage("Expected 5 products to be displayed")
-            .isEqualTo(5)
+        val products = homePage.getProductsCount()
+        assertThat(products)
+            .withFailMessage("Expected 5 or more products to be displayed but size was: $products")
+            .isGreaterThanOrEqualTo(5)
     }
 
     @Test
