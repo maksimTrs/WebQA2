@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory
 import java.net.URL
 
 object WebDriverFactory {
-    private val logger = LoggerFactory.getLogger(WebDriverFactory::class.java)
+    private val logger = LoggerFactory.getLogger(this::class.java)
     private val driverThreadLocal = ThreadLocal<WebDriver>()
     private const val DEFAULT_WINDOW_WIDTH = 1920
     private const val DEFAULT_WINDOW_HEIGHT = 1080
@@ -67,17 +67,16 @@ object WebDriverFactory {
     }
 
     fun getDriver(): WebDriver {
-        return driverThreadLocal.get() ?: throw IllegalStateException("WebDriver has not been initialized for this thread.")
+        return driverThreadLocal.get() ?: throw error("WebDriver has not been initialized for this thread.")
     }
 
     fun quitDriver() {
         driverThreadLocal.get()?.let { driver ->
             try {
                 driver.quit()
+                driverThreadLocal.remove()
             } catch (e: Exception) {
                 logger.error("Error quitting driver: ${e.message}")
-            } finally {
-                driverThreadLocal.remove()
             }
         }
     }
