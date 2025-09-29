@@ -10,20 +10,13 @@ import org.openqa.selenium.remote.RemoteWebDriver
 import org.slf4j.LoggerFactory
 import java.net.URL
 
-/**
- * Core interface for creating WebDriver instances.
- */
 interface DriverFactory {
     fun createDriver(browser: BrowserCapabilities, options: DriverOptions): WebDriver
 }
 
-/**
- * Factory for creating local WebDriver instances with WebDriverManager integration.
- */
 class LocalDriverFactory : DriverFactory {
     private val logger = LoggerFactory.getLogger(LocalDriverFactory::class.java)
 
-    // Lazy initialization to avoid redundant WebDriverManager setup
     private val chromeSetup = lazy {
         logger.debug("Setting up ChromeDriver...")
         WebDriverManager.chromedriver().setup()
@@ -52,10 +45,6 @@ class LocalDriverFactory : DriverFactory {
     }
 }
 
-/**
- * Factory for creating remote WebDriver instances (Selenium Grid).
- * Includes health check and retry logic for resilience.
- */
 class RemoteDriverFactory(private val gridUrl: String) : DriverFactory {
     private val logger = LoggerFactory.getLogger(RemoteDriverFactory::class.java)
 
@@ -77,8 +66,5 @@ class RemoteDriverFactory(private val gridUrl: String) : DriverFactory {
     }
 }
 
-/**
- * Exception thrown when driver creation fails.
- */
 class DriverCreationException(message: String, cause: Throwable? = null) :
     RuntimeException(message, cause)

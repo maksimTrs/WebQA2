@@ -4,16 +4,9 @@ import org.openqa.selenium.MutableCapabilities
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.firefox.FirefoxOptions
 
-/**
- * Type-safe browser capability configurations.
- * Each browser defines how to build its specific options based on DriverOptions.
- */
 sealed interface BrowserCapabilities {
     val browserName: String
 
-    /**
-     * Builds browser-specific capabilities from common driver options.
-     */
     fun buildCapabilities(options: DriverOptions): MutableCapabilities
 
     object Chrome : BrowserCapabilities {
@@ -21,7 +14,6 @@ sealed interface BrowserCapabilities {
 
         override fun buildCapabilities(options: DriverOptions): ChromeOptions {
             return ChromeOptions().apply {
-                // Base arguments
                 val arguments = mutableListOf<String>()
 
                 if (options.headless) {
@@ -36,7 +28,6 @@ sealed interface BrowserCapabilities {
                     arguments.add("--start-maximized")
                 }
 
-                // Common stability arguments
                 arguments.addAll(
                     listOf(
                         "--disable-extensions",
@@ -47,12 +38,10 @@ sealed interface BrowserCapabilities {
                     )
                 )
 
-                // Additional custom arguments
                 arguments.addAll(options.additionalArguments)
 
                 addArguments(arguments)
 
-                // Experimental options
                 val prefs = mutableMapOf<String, Any>()
 
                 options.downloadDirectory?.let {
@@ -60,7 +49,6 @@ sealed interface BrowserCapabilities {
                     prefs["download.prompt_for_download"] = false
                 }
 
-                // Add custom experimental options
                 options.experimentalOptions.forEach { (key, value) ->
                     setExperimentalOption(key, value)
                 }
@@ -69,7 +57,6 @@ sealed interface BrowserCapabilities {
                     setExperimentalOption("prefs", prefs)
                 }
 
-                // Capabilities
                 setAcceptInsecureCerts(options.acceptInsecureCerts)
                 options.proxy?.let { setProxy(it) }
             }
@@ -81,7 +68,6 @@ sealed interface BrowserCapabilities {
 
         override fun buildCapabilities(options: DriverOptions): FirefoxOptions {
             return FirefoxOptions().apply {
-                // Base arguments
                 val arguments = mutableListOf<String>()
 
                 if (options.headless) {
@@ -94,17 +80,14 @@ sealed interface BrowserCapabilities {
 
                 addArguments(arguments)
 
-                // Additional custom arguments
                 addArguments(options.additionalArguments)
 
-                // Firefox preferences
                 options.downloadDirectory?.let {
                     addPreference("browser.download.dir", it)
                     addPreference("browser.download.folderList", 2)
                     addPreference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
                 }
 
-                // Capabilities
                 setAcceptInsecureCerts(options.acceptInsecureCerts)
                 options.proxy?.let { setProxy(it) }
             }

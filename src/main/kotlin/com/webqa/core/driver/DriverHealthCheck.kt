@@ -4,18 +4,10 @@ import org.slf4j.LoggerFactory
 import java.net.HttpURLConnection
 import java.net.URL
 
-/**
- * Health check utility for Selenium Grid connectivity.
- */
 object DriverHealthCheck {
     private val logger = LoggerFactory.getLogger(DriverHealthCheck::class.java)
     private const val HEALTH_CHECK_TIMEOUT_MS = 5000
 
-    /**
-     * Checks if Selenium Grid is reachable and healthy.
-     * @param gridUrl The Selenium Grid URL
-     * @return true if grid is healthy, false otherwise
-     */
     fun isGridHealthy(gridUrl: String): Boolean {
         return try {
             val statusUrl = gridUrl.replace("/wd/hub", "/status")
@@ -45,11 +37,6 @@ object DriverHealthCheck {
         }
     }
 
-    /**
-     * Performs a health check and throws an exception if the grid is unhealthy.
-     * @param gridUrl The Selenium Grid URL
-     * @throws DriverCreationException if grid is not healthy
-     */
     fun ensureGridHealthy(gridUrl: String) {
         if (!isGridHealthy(gridUrl)) {
             throw DriverCreationException(

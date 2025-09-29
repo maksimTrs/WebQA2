@@ -3,9 +3,6 @@ package com.webqa.core.driver
 import org.slf4j.LoggerFactory
 import java.time.Duration
 
-/**
- * Retry policy configuration for resilient driver creation.
- */
 data class RetryPolicy(
     val maxAttempts: Int = 3,
     val delayBetweenAttempts: Duration = Duration.ofSeconds(2),
@@ -21,15 +18,9 @@ data class RetryPolicy(
     }
 }
 
-/**
- * Utility for executing operations with retry logic.
- */
 object RetryExecutor {
     private val logger = LoggerFactory.getLogger(RetryExecutor::class.java)
 
-    /**
-     * Executes an operation with retry logic based on the provided policy.
-     */
     fun <T> executeWithRetry(
         policy: RetryPolicy,
         operationName: String,

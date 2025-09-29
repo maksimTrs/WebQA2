@@ -4,9 +4,6 @@ import org.openqa.selenium.Dimension
 import org.openqa.selenium.Proxy
 import java.time.Duration
 
-/**
- * Comprehensive configuration options for WebDriver creation and initialization.
- */
 data class DriverOptions(
     val headless: Boolean = false,
     val incognito: Boolean = true,

@@ -3,16 +3,9 @@ package com.webqa.core.driver
 import org.openqa.selenium.WebDriver
 import org.slf4j.LoggerFactory
 
-/**
- * Handles post-creation driver initialization (timeouts, window management, etc.).
- */
 class DriverInitializer(private val options: DriverOptions) {
     private val logger = LoggerFactory.getLogger(DriverInitializer::class.java)
 
-    /**
-     * Initializes a WebDriver with configured options.
-     * @throws DriverInitializationException if initialization fails
-     */
     fun initialize(driver: WebDriver): WebDriver {
         try {
             configureTimeouts(driver)
@@ -21,7 +14,6 @@ class DriverInitializer(private val options: DriverOptions) {
             return driver
         } catch (e: Exception) {
             logger.error("Failed to initialize driver: ${e.message}", e)
-            // Cleanup the driver if initialization fails
             try {
                 driver.quit()
             } catch (quitException: Exception) {
