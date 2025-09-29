@@ -1,6 +1,8 @@
 package com.webqa.tests
 
 import com.webqa.core.config.Configuration
+import com.webqa.core.driver.BrowserCapabilities
+import com.webqa.core.driver.DriverOptions
 import com.webqa.core.driver.WebDriverFactory
 import io.qameta.allure.Allure
 import org.openqa.selenium.OutputType
@@ -24,10 +26,13 @@ abstract class BaseTest {
     @Parameters("browser")
     @BeforeMethod(alwaysRun = true)
     fun setUp(@Optional browser: String?) {
-        val browserName = browser?.uppercase() ?: Configuration.browser.uppercase()
-        val browserType = WebDriverFactory.Browser.valueOf(browserName)
-        logger.info("Initializing test with browser: {}", browserType)
-        WebDriverFactory.createDriver(browserType).also { driver ->
+        val browserName = browser?.lowercase() ?: Configuration.browser.lowercase()
+        val browserCapabilities = BrowserCapabilities.fromString(browserName)
+        logger.info("Initializing test with browser: {}", browserCapabilities.browserName)
+
+        val options = DriverOptions.default()
+
+        WebDriverFactory.createDriver(browserCapabilities, options).also { driver ->
             if (driver is RemoteWebDriver) {
                 logger.info(
                     "Started test on {} {}",
