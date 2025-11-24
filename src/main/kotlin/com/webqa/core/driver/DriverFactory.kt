@@ -3,9 +3,7 @@ package com.webqa.core.driver
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.chrome.ChromeDriver
-import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.firefox.FirefoxDriver
-import org.openqa.selenium.firefox.FirefoxOptions
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.slf4j.LoggerFactory
 import java.net.URL
@@ -33,11 +31,11 @@ class LocalDriverFactory : DriverFactory {
         return when (browser) {
             is BrowserCapabilities.Chrome -> {
                 chromeSetup.value
-                ChromeDriver(browser.buildCapabilities(options) as ChromeOptions)
+                ChromeDriver(browser.buildCapabilities(options))
             }
             is BrowserCapabilities.Firefox -> {
                 firefoxSetup.value
-                FirefoxDriver(browser.buildCapabilities(options) as FirefoxOptions)
+                FirefoxDriver(browser.buildCapabilities(options))
             }
         }.also {
             logger.info("Local ${browser.browserName} driver created successfully")
