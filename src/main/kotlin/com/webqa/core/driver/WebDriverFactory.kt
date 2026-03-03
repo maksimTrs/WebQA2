@@ -46,8 +46,8 @@ object WebDriverFactory {
 
     private val config: DriverConfiguration by lazy {
         DriverConfiguration(
-            isRemote = System.getProperty("remote", Configuration.isRemote).toBoolean(),
-            gridUrl = System.getProperty("selenium.grid.url", "http://localhost:4444/wd/hub")
+            isRemote = System.getProperty("remote")?.toBoolean() ?: Configuration.isRemote,
+            gridUrl = System.getProperty("selenium.grid.url", Configuration.gridUrl)
         )
     }
 

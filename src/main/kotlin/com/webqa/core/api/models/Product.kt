@@ -3,12 +3,13 @@ package com.webqa.core.api.models
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class Product(
     val id: String,
     val description: String,
     val name: String,
     val price: Int,
-    @JsonProperty("iamgeUrl")
+    @JsonProperty("iamgeUrl") // Server-side typo in API response field name
     val imageUrl: String
 )
 

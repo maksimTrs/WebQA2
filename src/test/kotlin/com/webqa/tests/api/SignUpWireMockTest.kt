@@ -7,11 +7,16 @@ import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseApiTest
 import com.webqa.tests.api.wiremock.HttpStatusExtensions
 import com.webqa.tests.api.wiremock.WireMockTestExtension
+import io.qameta.allure.Feature
+import io.qameta.allure.Severity
+import io.qameta.allure.SeverityLevel
+import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
 import org.slf4j.LoggerFactory
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
+@Feature("Authentication")
 class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
     private val logger = LoggerFactory.getLogger(SignUpWireMockTest::class.java)
     private lateinit var signUpClient: AuthApiClient
@@ -24,6 +29,8 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
     }
 
     @Test(description = "Verify signup with WireMock scenario simulation")
+    @Story("WireMock Sign Up Scenarios")
+    @Severity(SeverityLevel.NORMAL)
     fun testSignUpScenario() {
         val email = generateEmail()
         logger.info("Testing signup scenario with email: {}", email)
@@ -49,6 +56,8 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
     }
 
     @Test(description = "Verify signup with simulated network delay")
+    @Story("WireMock Sign Up Scenarios")
+    @Severity(SeverityLevel.NORMAL)
     fun testSignUpWithDelay() {
         val email = generateEmail()
         val delayMs = 2000L
@@ -74,6 +83,8 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
     }
 
     @Test(description = "Verify signup with rate limiting")
+    @Story("WireMock Sign Up Scenarios")
+    @Severity(SeverityLevel.NORMAL)
     fun testSignUpRateLimiting() {
         val email = generateEmail()
         logger.info("Testing rate limiting for email: {}", email)

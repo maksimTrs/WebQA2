@@ -1,7 +1,7 @@
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "1.9.0"
+    kotlin("jvm") version "2.0.21"
     id("io.qameta.allure") version "2.11.2"
     id("org.openapi.generator") version "7.9.0"
     id("io.gitlab.arturbosch.detekt") version "1.23.5"
@@ -19,39 +19,37 @@ dependencies {
     implementation(kotlin("stdlib"))
 
     // Testing
-    testImplementation("org.testng:testng:7.8.0")
-    testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
+    testImplementation("org.testng:testng:7.10.2")
 
     // Assertions
-    testImplementation("org.assertj:assertj-core:3.24.2")
+    testImplementation("org.assertj:assertj-core:3.26.3")
 
     // Selenium
-    implementation("org.seleniumhq.selenium:selenium-java:4.11.0")
-    implementation("io.github.bonigarcia:webdrivermanager:5.4.1")
+    implementation("org.seleniumhq.selenium:selenium-java:4.27.0")
+    implementation("io.github.bonigarcia:webdrivermanager:5.9.2")
 
     // REST Assured
-    implementation("io.rest-assured:rest-assured:5.3.1")
-    implementation("io.rest-assured:kotlin-extensions:5.3.1")
+    implementation("io.rest-assured:rest-assured:5.5.0")
+    implementation("io.rest-assured:kotlin-extensions:5.5.0")
 
     // Allure
     implementation("io.qameta.allure:allure-testng:2.22.2")
     implementation("io.qameta.allure:allure-rest-assured:2.22.2")
     implementation("io.qameta.allure:allure-attachments:2.22.2")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.9.1")
-    implementation("io.qameta.allure:allure-okhttp3:2.17.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+    implementation("io.qameta.allure:allure-okhttp3:2.22.2")
 
     // Data Generation
-    implementation("net.datafaker:datafaker:2.0.1")
+    implementation("net.datafaker:datafaker:2.4.2")
 
     // Configuration
-    implementation("com.typesafe:config:1.4.2")
+    implementation("com.typesafe:config:1.4.3")
 
     // JSON
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.15.2")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.18.2")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.18.2")
 
     // WireMock
-    testImplementation("com.github.tomakehurst:wiremock-jre8:2.35.0")
     testImplementation("org.wiremock:wiremock-standalone:3.0.4")
 
     testImplementation("ch.qos.logback:logback-classic:1.4.11")
@@ -62,12 +60,9 @@ dependencies {
     // For Kotlin support
     implementation("com.squareup.moshi:moshi-kotlin:1.14.0")
 
-    // Swagger UI
-    implementation("org.webjars:swagger-ui:5.10.3")
-
     // Detekt
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.5")
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-libraries:1.23.5") 
+    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-libraries:1.23.5")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-ruleauthors:1.23.5")
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-complexity:1.23.5")
     // Security rules
@@ -81,6 +76,14 @@ openApiGenerate {
     outputDir.set("${buildDir}/generate-resources")
 }
 
+// Load .env file into environment for test tasks
+val dotEnv = rootProject.file(".env")
+    .takeIf { it.exists() }
+    ?.readLines()
+    ?.filter { it.isNotBlank() && !it.startsWith("#") }
+    ?.associate { line -> line.split("=", limit = 2).let { it[0].trim() to it[1].trim() } }
+    ?: emptyMap()
+
 tasks.test {
     useTestNG {
         useDefaultListeners = true
@@ -90,6 +93,11 @@ tasks.test {
     }
     systemProperty("allure.results.directory", "build/allure-results")
     systemProperty("remote", System.getProperty("remote", "false"))
+
+    // Pass .env values as environment variables (OS env vars take precedence)
+    dotEnv.forEach { (key, value) ->
+        environment(key, System.getenv(key) ?: value)
+    }
 
     testLogging {
         events("passed", "skipped", "failed")
@@ -103,11 +111,6 @@ sourceSets {
             srcDir("$buildDir/generate-resources/src/main")
         }
     }
-    /*    test {
-            kotlin {
-                srcDir("src/test/kotlin")
-            }
-        }*/
 }
 
 allure {
@@ -140,11 +143,14 @@ tasks.register<io.gitlab.arturbosch.detekt.Detekt>("detektSecurityCheck") {
 }
 
 // Ensure OpenAPI classes are generated before compiling
-tasks.withType<KotlinCompile> {
-    dependsOn(tasks.openApiGenerate)
-    kotlinOptions {
-        jvmTarget = "17"
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
     }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    dependsOn(tasks.openApiGenerate)
 }
 
 tasks.register<Delete>("cleanOpenApiGenerated") {

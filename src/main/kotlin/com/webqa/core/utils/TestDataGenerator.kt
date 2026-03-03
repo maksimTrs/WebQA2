@@ -5,9 +5,9 @@ import net.datafaker.Faker
 object TestDataGenerator {
     private val faker = Faker()
 
-    fun generateEmail() = "test${Faker().number().numberBetween(1000, 9999)}@mail.com"
+    fun generateEmail() = "test${faker.number().numberBetween(1000, 9999)}@mail.com"
 
-    fun generatePassword() = Faker().internet().password(6, 10)!!
+    fun generatePassword() = faker.internet().password(6, 10)!!
 
     fun generateCardDetails() = mapOf(
         "number" to "4444${faker.number().digits(12)}",

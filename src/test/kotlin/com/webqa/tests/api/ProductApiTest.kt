@@ -4,12 +4,13 @@ import com.webqa.core.api.clients.AuthApiClient
 import com.webqa.core.api.clients.ProductApiClient
 import com.webqa.core.utils.TestDataGenerator
 import com.webqa.tests.BaseApiTest
-import io.qameta.allure.Description
+import io.qameta.allure.*
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
 import org.testng.annotations.BeforeClass
 import org.testng.annotations.Test
 
+@Feature("Product Catalog API")
 class ProductApiTest : BaseApiTest() {
     private lateinit var authApiClient: AuthApiClient
     private lateinit var productApiClient: ProductApiClient
@@ -32,6 +33,8 @@ class ProductApiTest : BaseApiTest() {
     }
 
     @Test
+    @Story("Product Retrieval")
+    @Severity(SeverityLevel.CRITICAL)
     @Description("Verify products can be retrieved")
     fun testGetProducts() {
         val productsResponse = productApiClient.getProducts(authToken)
@@ -47,6 +50,8 @@ class ProductApiTest : BaseApiTest() {
     }
 
     @Test
+    @Story("Order Management")
+    @Severity(SeverityLevel.CRITICAL)
     @Description("Verify order can be created")
     fun testCreateOrder() {
         val cardDetails = TestDataGenerator.generateCardDetails()

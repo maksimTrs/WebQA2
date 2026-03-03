@@ -6,7 +6,7 @@ import io.qameta.allure.okhttp3.AllureOkHttp3
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.openapitools.client.apis.PetApi
-import org.testng.annotations.BeforeClass
+import org.testng.annotations.BeforeMethod
 import java.util.concurrent.TimeUnit
 
 private const val PET_SHOP_URL: String = "https://petstore3.swagger.io/api/v3"
@@ -16,7 +16,7 @@ abstract class BaseApiTest {
     protected val userPassword: String = App.userPass
     private lateinit var httpClient: OkHttpClient
 
-    @BeforeClass
+    @BeforeMethod
     fun setUpBase() {
         httpClient = createLoggingOkHttpClient()
     }
@@ -24,7 +24,7 @@ abstract class BaseApiTest {
     @Step("Create HTTP client with logging and Allure interceptors")
     protected fun createLoggingOkHttpClient(): OkHttpClient {
         val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level = HttpLoggingInterceptor.Level.HEADERS
         }
 
         val allureInterceptor = AllureOkHttp3()

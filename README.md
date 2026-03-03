@@ -67,7 +67,7 @@ Configuration Files:
 │   └─ ui-tests.xml          # UI tests configuration (parallel)
 ├─ .github/workflows
 │   └─ smoke.yml             # GitHub Actions workflow for CI/CD
-├─ .env                      # Environment configuration for Docker
+├─ .env.example              # Template for environment variables (credentials, config overrides)
 └─ docker-compose.yml        # FF, Chrome browser and Wiremock services
 ```
 
@@ -79,6 +79,11 @@ Configuration Files:
 2. Gradle installed (or use the included Gradle wrapper)
 3. Docker installed (for remote execution)
 4. Browsers installed (for local execution)
+5. Copy `.env.example` to `.env` and fill in test credentials:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your TEST_USER_EMAIL and TEST_PASSWORD
+   ```
 
 ### Continuous Integration with GitHub Actions
 
@@ -90,9 +95,11 @@ Located in `.github/workflows/smoke.yml`, this workflow:
 
 - Runs on push to main, master, and dev* branches
 - Can be triggered manually via GitHub UI
-- Executes in two sequential jobs:
-  1. **API Tests**: Runs SignUpAPITest
-  2. **UI Tests**: Runs LoginTest and SignUpUITest using Selenium Grid with Chrome
+- Executes three jobs:
+  1. **Lint Check**: Runs Detekt security analysis (non-blocking)
+  2. **API Tests**: Runs SignUpAPITest
+  3. **UI Tests**: Runs LoginTest and SignUpUITest using Selenium Grid with Chrome
+- Test credentials are injected via GitHub Secrets (`TEST_USER_EMAIL`, `TEST_PASSWORD`)
 - Uses caching for Gradle dependencies to speed up builds
 - Uploads build artifacts for failed tests for easier debugging
 - Automatically starts and stops Selenium Grid in Docker containers
@@ -196,10 +203,9 @@ The framework has been tested with:
 - Chrome: 131.0.6778.140
 - Firefox: 133.0.3
 
-#### Remote Execution (Selenium Grid):
+#### Remote Execution (Selenium Grid 4.27.0):
 
-- Chrome: 120.0.6099.109
-- Firefox: 120.0.1
+- Chrome and Firefox versions are determined by the Selenium Grid Docker images in `docker-compose.yml`
 
 Browser selection:
 
@@ -318,9 +324,12 @@ The framework uses Allure for test reporting. After test execution:
 
 ## 🔧 Configuration
 
-The framework uses Typesafe Config for configuration management. Main configuration files:
+The framework uses Typesafe Config for configuration management. Sensitive values (credentials, URLs) are loaded from environment variables with safe placeholder defaults.
 
-- `application.conf`: Main configuration file
+Main configuration files:
+
+- `application.conf`: Main configuration file (uses `${?ENV_VAR}` substitution for secrets)
+- `.env.example`: Template listing all required/optional environment variables
 - `petstore-openapi.json`: OpenAPI spec file
 - `logback-test.xml`: Logging configuration
 - `docker-compose.yml`: Docker file to run FF and Chrome instances via selenium/hub and Wiremock service

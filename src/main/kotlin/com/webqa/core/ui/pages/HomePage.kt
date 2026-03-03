@@ -25,10 +25,9 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
     @FindBy(xpath = "//div/a/following::h6[contains(text(), 'Welcome')]")
     private lateinit var loggedInUserInfo: WebElement
 
-    private val productCards: List<WebElement> by lazy {
+    private fun getProductCards(): List<WebElement> =
         WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
             .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item")))
-    }
 
     @FindBy(xpath = "//h6[text()='Chart']/../div/table")
     private lateinit var chartCart: WebElement
@@ -68,14 +67,14 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
 
     fun getProductsCount(): Int {
         waitForElement(loggedInUserInfo)
-        return productCards.size
+        return getProductCards().size
     }
 
     fun addProductToCart(index: Int) {
-        // Wait for products container and all product cards to be loaded
-        waitForElements(productCards)
+        val cards = getProductCards()
+        waitForElements(cards)
 
-        val addToCartButton = productCards[index].findElement(By.cssSelector(".MuiButton-containedSecondary"))
+        val addToCartButton = cards[index].findElement(By.cssSelector(".MuiButton-containedSecondary"))
         waitForElementToBeClickable(addToCartButton)
         addToCartButton.click()
     }

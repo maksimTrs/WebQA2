@@ -3,11 +3,12 @@ package com.webqa.tests.ui
 import com.webqa.core.ui.pages.HomePage
 import com.webqa.core.ui.pages.LoginPage
 import com.webqa.tests.BaseTest
-import io.qameta.allure.Description
+import io.qameta.allure.*
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
+@Feature("Product Catalog")
 class ProductTest : BaseTest() {
     private lateinit var homePage: HomePage
     private lateinit var loginPage: LoginPage
@@ -32,6 +33,8 @@ class ProductTest : BaseTest() {
     }
 
     @Test
+    @Story("Product Display")
+    @Severity(SeverityLevel.CRITICAL)
     @Description("Verify products are displayed for logged in user")
     fun testProductsDisplayed() {
         val products = homePage.getProductsCount()
@@ -41,11 +44,17 @@ class ProductTest : BaseTest() {
     }
 
     @Test
+    @Story("Shopping Cart")
+    @Severity(SeverityLevel.CRITICAL)
     @Description("Verify product can be added to cart")
     fun testAddProductToCart() {
         homePage.addProductToCart(0)
 
-        assertThat(homePage.isChartCartDisplayed()).isTrue
-        assertThat(homePage.getChartCartInputValue()).isEqualTo(1)
+        assertThat(homePage.isChartCartDisplayed())
+            .withFailMessage("Cart should be displayed after adding a product")
+            .isTrue
+        assertThat(homePage.getChartCartInputValue())
+            .withFailMessage("Cart should show quantity of 1 after adding one product")
+            .isEqualTo(1)
     }
 }

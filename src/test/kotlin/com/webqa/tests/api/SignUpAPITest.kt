@@ -5,12 +5,17 @@ import com.webqa.core.api.models.SignUpRequest
 import com.webqa.core.utils.TestDataGenerator.generateEmail
 import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseApiTest
+import io.qameta.allure.Feature
+import io.qameta.allure.Severity
+import io.qameta.allure.SeverityLevel
+import io.qameta.allure.Story
 import org.apache.http.HttpStatus.SC_BAD_REQUEST
 import org.apache.http.HttpStatus.SC_OK
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
+@Feature("Authentication")
 class SignUpAPITest : BaseApiTest() {
 
     private lateinit var signUpClient: AuthApiClient
@@ -30,6 +35,8 @@ class SignUpAPITest : BaseApiTest() {
     }
 
     @Test(description = "Verify successful user registration")
+    @Story("Sign Up")
+    @Severity(SeverityLevel.CRITICAL)
     fun testSuccessfulSignUp() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
@@ -39,10 +46,14 @@ class SignUpAPITest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request, statusCodeVal = SC_OK)
-        assertThat(response.message).isEqualTo(SUCCESS_MESSAGE)
+        assertThat(response.message)
+            .withFailMessage("Expected successful registration message")
+            .isEqualTo(SUCCESS_MESSAGE)
     }
 
     @Test(description = "Verify password mismatch validation")
+    @Story("Sign Up Validation")
+    @Severity(SeverityLevel.NORMAL)
     fun testSignUpWithMismatchedPasswords() {
         val request = SignUpRequest(
             email = generateEmail(),
@@ -51,10 +62,14 @@ class SignUpAPITest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
-        assertThat(response.error!!.message).isEqualTo(PASSWORD_MISMATCH_MESSAGE)
+        assertThat(response.error!!.message)
+            .withFailMessage("Expected password mismatch error message")
+            .isEqualTo(PASSWORD_MISMATCH_MESSAGE)
     }
 
     @Test(description = "Verify invalid email format validation")
+    @Story("Sign Up Validation")
+    @Severity(SeverityLevel.NORMAL)
     fun testSignUpWithInvalidEmail() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
@@ -64,10 +79,14 @@ class SignUpAPITest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
-        assertThat(response.error!!.message).isEqualTo(VALIDATION_ERROR_MESSAGE)
+        assertThat(response.error!!.message)
+            .withFailMessage("Expected validation error for invalid email format")
+            .isEqualTo(VALIDATION_ERROR_MESSAGE)
     }
 
     @Test(description = "Verify existing email validation")
+    @Story("Sign Up Validation")
+    @Severity(SeverityLevel.NORMAL)
     fun testSignUpWithExistingEmail() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
@@ -77,6 +96,8 @@ class SignUpAPITest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
-        assertThat(response.error!!.message).isEqualTo("Email $userEmail already exists")
+        assertThat(response.error!!.message)
+            .withFailMessage("Expected duplicate email error message")
+            .isEqualTo("Email $userEmail already exists")
     }
 }
