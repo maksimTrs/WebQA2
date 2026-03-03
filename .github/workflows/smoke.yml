@@ -53,6 +53,13 @@ jobs:
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
         run: ./gradlew test --tests com.webqa.tests.api.SignUpAPITest
 
+      - name: Publish API Test Results
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040  # v2.23.0
+        if: always()
+        with:
+          files: build/test-results/test/**/*.xml
+          check_name: API Test Results
+
       - name: Upload Build Directory
         if: failure() && steps.run-api-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
@@ -106,6 +113,13 @@ jobs:
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
         run: ./gradlew test --tests com.webqa.tests.ui.LoginTest --tests com.webqa.tests.ui.SignUpUITest -Dremote=true
+
+      - name: Publish UI Test Results
+        uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040  # v2.23.0
+        if: always()
+        with:
+          files: build/test-results/test/**/*.xml
+          check_name: UI Test Results
 
       - name: Upload Build Directory
         if: failure() && steps.run-ui-tests.outcome != 'success'
