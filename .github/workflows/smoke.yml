@@ -88,11 +88,12 @@ jobs:
           docker logs "$CHROME_CONTAINER_ID"
 
       - name: Wait for Selenium Grid to be ready
-        timeout-minutes: 2
+        timeout-minutes: 3
         run: |
           echo "Waiting for Selenium Grid to become ready..."
-          until curl -sf http://localhost:4444/wd/hub/status | grep -q '"ready":true'; do
+          until curl -sf http://localhost:4444/wd/hub/status | grep -qE '"ready"\s*:\s*true'; do
             echo "Grid not ready yet, retrying in 3s..."
+            curl -s http://localhost:4444/wd/hub/status 2>/dev/null || echo "  (endpoint not responding yet)"
             sleep 3
           done
           echo "Selenium Grid is ready"
