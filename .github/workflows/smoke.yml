@@ -66,6 +66,8 @@ jobs:
     needs: api-tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      WIREMOCK_PORT: ${{ secrets.WIREMOCK_PORT }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
