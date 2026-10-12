@@ -1,6 +1,6 @@
 services:
   selenium-hub:
-    image: selenium/hub:4.27.0
+    image: selenium/hub:4.49.0
     container_name: selenium-hub
     ports:
       - "4444:4444"
@@ -8,7 +8,7 @@ services:
       - "4442:4442"
 
   chrome:
-    image: selenium/node-chrome:4.27.0
+    image: selenium/node-chrome:4.49.0
     shm_size: 2gb
     depends_on:
       - selenium-hub
@@ -22,7 +22,7 @@ services:
       - "7900:7900"
 
   firefox:
-    image: selenium/node-firefox:4.27.0
+    image: selenium/node-firefox:4.49.0
     shm_size: 2gb
     depends_on:
       - selenium-hub
@@ -36,7 +36,7 @@ services:
       - "7901:7900"
 
   wiremock:
-    image: wiremock/wiremock:3.10.0
+    image: wiremock/wiremock:3.13.2
     container_name: wiremock
     ports:
       - "${WIREMOCK_PORT:-9999}:${WIREMOCK_PORT:-9999}"

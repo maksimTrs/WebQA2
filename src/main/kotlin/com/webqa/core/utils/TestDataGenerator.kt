@@ -10,7 +10,7 @@ object TestDataGenerator {
 
     fun generateEmail() = "test-${UUID.randomUUID()}@mail.com"
 
-    fun generatePassword() = faker.internet().password(6, 10)!!
+    fun generatePassword() = faker.credentials().password(6, 10)!!
 
     fun generateCardDetails(): Map<String, Any> {
         // Always in the future so the card is never rejected as expired

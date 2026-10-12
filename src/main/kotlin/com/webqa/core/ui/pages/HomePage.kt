@@ -72,6 +72,7 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
 
     fun getChartCartInputValue(): Int {
         waitForElement(chartCart)
-        return chartCartInputValue.getAttribute("value").toInt()
+        val value = checkNotNull(chartCartInputValue.getDomProperty("value")) { "Cart quantity input has no value" }
+        return value.toInt()
     }
 }
