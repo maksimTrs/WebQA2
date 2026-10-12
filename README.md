@@ -5,9 +5,11 @@ UI and API test automation for the WebQA demo shop, written in Kotlin on TestNG,
 ## Architecture
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
-  <img alt="Tests call the WebQA app through page objects (WebDriver, local or Selenium Grid) and a shared REST Assured client, which also targets WireMock; Petstore tests use a generated OpenAPI client; everything reads one configuration" src="docs/architecture-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.png">
+  <img alt="WebQA architecture: CI and local Gradle runs start TestNG suites; UI tests drive the WebQA app through page objects and WebDriver (local or Selenium Grid in Docker); API tests use a shared REST Assured client that also targets a WireMock container; Petstore tests use a generated OpenAPI client; configuration and reports are shared" src="docs/architecture-light.png">
 </picture>
+
+<sub>Source: <code>docs/architecture.html</code>. After editing it, re-take both PNG screenshots of <code>.frame</code> (light and dark color scheme, 2x).</sub>
 
 - **UI**: page objects on explicit waits (`WebDriverWait`, no implicit waits). One driver per thread, so suites run in parallel. Chrome or Firefox, locally or on Selenium Grid. A screenshot is attached to Allure when a test fails.
 - **API**: one `ApiClient` base for all clients. It applies timeouts and logging, and every call is attached to Allure. The `Authorization` header is masked in logs, and the login response that carries the token is neither logged nor attached.
