@@ -1,0 +1,10 @@
+#!/bin/sh
+# Only files that declare tests (@Test) must be named *Test.kt; helpers are exempt.
+# Git for Windows runs hooks with its bundled sh, so one script covers all platforms.
+BAD_NAMES=$(grep -rl --include="*.kt" "@Test" src/test/kotlin/com/webqa/tests | grep -v "Test.kt$")
+
+if [ -n "$BAD_NAMES" ]; then
+    echo "pre-commit: these files declare tests but are not named *Test.kt:"
+    echo "$BAD_NAMES"
+    exit 1
+fi

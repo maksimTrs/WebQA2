@@ -1,0 +1,2 @@
+# Hooks run under sh, which fails on CRLF line endings (core.autocrlf=true on Windows would add them)
+.githooks/* text eol=lf

@@ -1,0 +1,7 @@
+#!/bin/sh
+# Same static analysis as the CI "Lint Check" job: a push that would fail lint in CI fails here first.
+echo "pre-push: running detekt..."
+if ! ./gradlew --quiet detekt detektSecurityCheck; then
+    echo "pre-push: detekt found issues, push aborted (reports: build/reports/detekt/)."
+    exit 1
+fi

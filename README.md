@@ -28,6 +28,11 @@ Stack: Kotlin · Gradle · TestNG · Selenium 4 · REST Assured · WireMock · A
    cp .env.example .env   # then set TEST_USER_EMAIL and TEST_PASSWORD
    ```
    Gradle passes `.env` to the tests. Real environment variables take precedence. Optional overrides (browser, URLs, headless, Grid URL) are listed in `.env.example`.
+4. Git hooks (once per clone):
+   ```bash
+   git config core.hooksPath .githooks
+   ```
+   `pre-commit` checks that files with `@Test` are named `*Test.kt`. `pre-push` runs the same detekt checks as the CI Lint Check job.
 
 ## Running tests
 
