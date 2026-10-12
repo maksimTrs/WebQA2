@@ -47,6 +47,7 @@ jobs:
       contents: read
       actions: read
       checks: write
+      pull-requests: write  # test-result summary comment on the PR
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -95,6 +96,7 @@ jobs:
       contents: read
       actions: read
       checks: write
+      pull-requests: write  # test-result summary comment on the PR
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
