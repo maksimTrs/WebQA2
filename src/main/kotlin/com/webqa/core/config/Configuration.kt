@@ -34,7 +34,9 @@ object Configuration {
         }
     }
 
-    private fun requiredSecret(path: String, envVar: String): String =
-        config.takeIf { it.hasPath(path) }?.getString(path)?.takeIf { it.isNotBlank() }
-            ?: error("$envVar is not set: export it or add it to .env")
+    private fun requiredSecret(path: String, envVar: String): String {
+        val value = if (config.hasPath(path)) config.getString(path) else ""
+        check(value.isNotBlank()) { "$envVar is not set: export it or add it to .env" }
+        return value
+    }
 }

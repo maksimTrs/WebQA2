@@ -63,10 +63,12 @@ class ProductApiTest : BaseApiTest() {
             productsResponse.products.forEach { p ->
                 soft.assertThat(p.id).describedAs("id of product '%s'", p.name).isNotBlank()
                 soft.assertThat(p.name).describedAs("name of product %s", p.id).isNotBlank()
-                soft.assertThat(
-                    p.price
-                ).describedAs("price of product %s", p.id).isGreaterThanOrEqualTo(BigDecimal.ZERO)
-                soft.assertThat(p.stockQuantity).describedAs("stock of product %s", p.id).isGreaterThanOrEqualTo(0)
+                soft.assertThat(p.price)
+                    .describedAs("price of product %s", p.id)
+                    .isGreaterThanOrEqualTo(BigDecimal.ZERO)
+                soft.assertThat(p.stockQuantity)
+                    .describedAs("stock of product %s", p.id)
+                    .isGreaterThanOrEqualTo(0)
                 soft.assertThat(p.isOutOfStock)
                     .describedAs("isOutOfStock of product %s with stock %d", p.id, p.stockQuantity)
                     .isEqualTo(p.stockQuantity == 0)
@@ -93,14 +95,14 @@ class ProductApiTest : BaseApiTest() {
             soft.assertThat(order.status).describedAs("order status").isEqualTo(PAID_STATUS)
             soft.assertThat(order.totalQuantity).describedAs("total quantity").isEqualTo(ORDER_QUANTITY)
             soft.assertThat(order.totalSum).describedAs("total sum").isEqualByComparingTo(expectedSum)
-            soft.assertThat(
-                order.products.map { it.product.id }
-            ).describedAs("ordered products").containsExactly(product.id)
+            soft.assertThat(order.products.map { it.product.id })
+                .describedAs("ordered products")
+                .containsExactly(product.id)
             soft.assertThat(order.user.email).describedAs("order owner").isEqualTo(userEmail)
-            soft.assertThat(orderResponse.message).describedAs("message")
-                .isEqualTo(
-                    "Purchase of ${order.totalSum.stripTrailingZeros().toPlainString()} USD completed successfully"
-                )
+            val sumText = order.totalSum.stripTrailingZeros().toPlainString()
+            soft.assertThat(orderResponse.message)
+                .describedAs("message")
+                .isEqualTo("Purchase of $sumText USD completed successfully")
         }
     }
 

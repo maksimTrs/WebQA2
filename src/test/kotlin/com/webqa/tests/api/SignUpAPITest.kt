@@ -63,7 +63,7 @@ class SignUpAPITest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
-        assertThat(response.error!!.message)
+        assertThat(response.error?.message)
             .withFailMessage("Expected password mismatch error message")
             .isEqualTo(PASSWORD_MISMATCH_MESSAGE)
     }
@@ -80,7 +80,7 @@ class SignUpAPITest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
-        assertThat(response.error!!.message)
+        assertThat(response.error?.message)
             .withFailMessage("Expected validation error for invalid email format")
             .isEqualTo(VALIDATION_ERROR_MESSAGE)
     }
