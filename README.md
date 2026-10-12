@@ -61,7 +61,8 @@ Configuration Files:
 │   ├─ api-tests.xml         # API tests configuration
 │   ├─ logback-test.xml      # Test logging configuration
 │   ├─ regression.xml        # Full regression suite
-│   ├─ smoke.xml             # Smoke test suite
+│   ├─ smoke-api.xml         # Smoke API suite (CI)
+│   ├─ smoke-ui.xml          # Smoke UI suite (CI)
 │   ├─ testNg.xml            # Main TestNG configuration
 │   └─ ui-tests.xml          # UI tests configuration (parallel)
 ├─ .github/workflows
@@ -95,12 +96,12 @@ Located in `.github/workflows/smoke.yml`, this workflow:
 - Runs on push to main, master, and dev* branches
 - Can be triggered manually via GitHub UI
 - Executes three jobs:
-  1. **Lint Check**: Runs Detekt security analysis (non-blocking)
-  2. **API Tests**: Runs SignUpAPITest
-  3. **UI Tests**: Runs LoginTest and SignUpUITest using Selenium Grid with Chrome
+  1. **Lint Check**: Runs `detekt` and `detektSecurityCheck` (fails the workflow on any issue)
+  2. **API Tests**: Runs `smoke-api.xml`
+  3. **UI Tests**: Runs `smoke-ui.xml` using Selenium Grid with Chrome
 - Test credentials are injected via GitHub Secrets (`TEST_USER_EMAIL`, `TEST_PASSWORD`)
 - Uses caching for Gradle dependencies to speed up builds
-- Uploads build artifacts for failed tests for easier debugging
+- Uploads test reports (`build/reports`, `build/test-results`, `build/allure-results`) for failed jobs
 - Automatically starts and stops Selenium Grid in Docker containers
 
 To view test results:
@@ -156,7 +157,7 @@ The project includes several TestNG XML suites in `src/test/resources/`:
 1. `testNg.xml`: All tests
 2. `ui-tests.xml`: UI tests in Chrome and Firefox (parallel execution)
 3. `api-tests.xml`: API tests only
-4. `smoke.xml`: Critical path tests
+4. `smoke-api.xml` / `smoke-ui.xml`: Critical path tests (used by CI)
 5. `regression.xml`: Full regression suite
 
 Run a specific suite (use <"> or <'> to wrap xml path):

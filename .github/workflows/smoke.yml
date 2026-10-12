@@ -23,12 +23,11 @@ jobs:
       - name: Setup Java and Gradle Environment
         uses: ./.github/actions/java-setup
 
-      - name: Run Detekt Security Check
-        id: run-detekt
-        run: ./gradlew detektSecurityCheck
-        continue-on-error: true
+      - name: Run Detekt
+        run: ./gradlew detekt detektSecurityCheck --continue
 
       - name: Upload Detekt Reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: detekt-reports
@@ -51,7 +50,7 @@ jobs:
         env:
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
-        run: ./gradlew test --tests com.webqa.tests.api.SignUpAPITest
+        run: ./gradlew test -PsuiteFile=src/test/resources/smoke-api.xml
 
       - name: Publish API Test Results
         uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040  # v2.23.0
@@ -60,12 +59,15 @@ jobs:
           files: build/test-results/test/**/*.xml
           check_name: API Test Results
 
-      - name: Upload Build Directory
+      - name: Upload Test Reports
         if: failure() && steps.run-api-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: api-build-directory
-          path: build
+          name: api-test-reports
+          path: |
+            build/reports
+            build/test-results
+            build/allure-results
           retention-days: 5
 
   ui-tests:
@@ -73,8 +75,6 @@ jobs:
     needs: api-tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    env:
-      WIREMOCK_PORT: ${{ secrets.WIREMOCK_PORT }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -112,7 +112,7 @@ jobs:
         env:
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
-        run: ./gradlew test --tests com.webqa.tests.ui.LoginTest --tests com.webqa.tests.ui.SignUpUITest -Dremote=true
+        run: ./gradlew test -PsuiteFile=src/test/resources/smoke-ui.xml -Dremote=true
 
       - name: Publish UI Test Results
         uses: EnricoMi/publish-unit-test-result-action@c950f6fb443cb5af20a377fd0dfaa78838901040  # v2.23.0
@@ -121,12 +121,15 @@ jobs:
           files: build/test-results/test/**/*.xml
           check_name: UI Test Results
 
-      - name: Upload Build Directory
+      - name: Upload Test Reports
         if: failure() && steps.run-ui-tests.outcome != 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: ui-build-directory
-          path: build
+          name: ui-test-reports
+          path: |
+            build/reports
+            build/test-results
+            build/allure-results
           retention-days: 5
 
       - name: Stop Selenium Grid

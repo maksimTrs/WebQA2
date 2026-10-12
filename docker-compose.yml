@@ -39,9 +39,9 @@ services:
     image: wiremock/wiremock:3.10.0
     container_name: wiremock
     ports:
-      - "${WIREMOCK_PORT}:${WIREMOCK_PORT}"
+      - "${WIREMOCK_PORT:-9999}:${WIREMOCK_PORT:-9999}"
     volumes:
       - ./wiremock/mappings:/home/wiremock/mappings
       - ./wiremock/files:/home/wiremock/__files
     environment:
-      - WIREMOCK_OPTIONS=--port ${WIREMOCK_PORT} --verbose --global-response-templating --local-response-templating
+      - WIREMOCK_OPTIONS=--port ${WIREMOCK_PORT:-9999} --verbose --global-response-templating --local-response-templating

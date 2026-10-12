@@ -128,11 +128,16 @@ tasks.register<io.gitlab.arturbosch.detekt.Detekt>("detektSecurityCheck") {
     description = "Run security focused detekt checks"
     setSource(files("src/main/kotlin", "src/test/kotlin"))
     config.setFrom(files("$projectDir/config/detekt/detekt-security.yml"))
+    // Separate file names: by default both detekt tasks write build/reports/detekt/detekt.*
     reports {
         html.required.set(true)
+        html.outputLocation.set(layout.buildDirectory.file("reports/detekt/security.html"))
         xml.required.set(true)
+        xml.outputLocation.set(layout.buildDirectory.file("reports/detekt/security.xml"))
         txt.required.set(false)
         sarif.required.set(true)
+        sarif.outputLocation.set(layout.buildDirectory.file("reports/detekt/security.sarif"))
+        md.required.set(false)
     }
     include("**/*.kt")
     include("**/*.kts")
