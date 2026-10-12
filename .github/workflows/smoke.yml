@@ -3,8 +3,13 @@ name: Smoke Tests
 on:
   push:
     branches: [ main, master, dev* ]
+  pull_request:
   workflow_dispatch:
 
+# A newer push to the same branch/PR cancels the outdated run
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -72,7 +77,6 @@ jobs:
 
   ui-tests:
     name: UI Tests
-    needs: api-tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:

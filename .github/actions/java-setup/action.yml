@@ -1,5 +1,5 @@
 name: 'Setup Java and Gradle Environments with caches'
-description: 'Sets up Java, caches Gradle dependencies, and makes gradlew executable'
+description: 'Sets up Java and caches Gradle dependencies'
 inputs:
   java-version:
     description: 'Java version to set up'
@@ -31,7 +31,3 @@ runs:
         restore-keys: |
           ${{ runner.os }}-gradle-
         enableCrossOsArchive: false
-
-    - name: Make gradlew executable
-      run: chmod +x ./gradlew
-      shell: bash

@@ -93,9 +93,10 @@ The project includes GitHub Actions workflows for automated testing:
 
 Located in `.github/workflows/smoke.yml`, this workflow:
 
-- Runs on push to main, master, and dev* branches
+- Runs on push to main, master, and dev* branches and on pull requests
 - Can be triggered manually via GitHub UI
-- Executes three jobs:
+- A newer push to the same branch or PR cancels the outdated run
+- Executes three independent jobs in parallel:
   1. **Lint Check**: Runs `detekt` and `detektSecurityCheck` (fails the workflow on any issue)
   2. **API Tests**: Runs `smoke-api.xml`
   3. **UI Tests**: Runs `smoke-ui.xml` using Selenium Grid with Chrome
