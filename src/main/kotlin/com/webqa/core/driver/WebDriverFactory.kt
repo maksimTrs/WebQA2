@@ -18,7 +18,6 @@ data class DriverOptions(
     val incognito: Boolean = true,
     val windowSize: Dimension = Dimension(1920, 1080),
     val maximized: Boolean = false,
-    val implicitWait: Duration = Duration.ofSeconds(10),
     val pageLoadTimeout: Duration = Duration.ofSeconds(30),
     val scriptTimeout: Duration = Duration.ofSeconds(30),
     val proxy: Proxy? = null,
@@ -99,7 +98,6 @@ object WebDriverFactory {
     private fun initializeDriver(driver: WebDriver, options: DriverOptions) {
         try {
             driver.manage().timeouts().apply {
-                implicitlyWait(options.implicitWait)
                 pageLoadTimeout(options.pageLoadTimeout)
                 scriptTimeout(options.scriptTimeout)
             }

@@ -6,17 +6,12 @@ import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseTest
 import io.qameta.allure.*
 import org.assertj.core.api.Assertions.assertThat
-import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
 @Feature("Authentication")
 class SignUpUITest : BaseTest() {
-    private lateinit var signUpPage: SignUpPage
-
-    @BeforeMethod
-    fun openSignUpPage() {
-        signUpPage = SignUpPage(getDriver())
-    }
+    // Getter, not a field: with parallel="methods" TestNG shares one instance across threads
+    private val signUpPage get() = SignUpPage(getDriver())
 
     @Test
     @Story("Sign Up")

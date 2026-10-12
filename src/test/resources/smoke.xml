@@ -29,7 +29,7 @@
             </class>
             <class name="com.webqa.tests.api.ProductApiTest">
                 <methods>
-                    <include name="testGetProduct"/>
+                    <include name="testGetProducts"/>
                 </methods>
             </class>
         </classes>

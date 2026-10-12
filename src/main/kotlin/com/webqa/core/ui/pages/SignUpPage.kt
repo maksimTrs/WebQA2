@@ -7,8 +7,6 @@ import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.FindBy
 import org.openqa.selenium.support.ui.ExpectedConditions
-import org.openqa.selenium.support.ui.WebDriverWait
-import java.time.Duration
 
 class SignUpPage(driver: WebDriver) : BasePage(driver) {
     companion object {
@@ -65,8 +63,7 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
 
     fun isAlertPresent(): Boolean {
         return try {
-            WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
-                .until(ExpectedConditions.alertIsPresent())
+            wait.until(ExpectedConditions.alertIsPresent())
             true
         } catch (e: TimeoutException) {
             false
@@ -74,14 +71,10 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
     }
 
     fun getAlertText(): String {
-        val alert = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
-            .until(ExpectedConditions.alertIsPresent())
-        return alert.text
+        return wait.until(ExpectedConditions.alertIsPresent()).text
     }
 
     fun acceptAlert() {
-        val alert = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
-            .until(ExpectedConditions.alertIsPresent())
-        alert.accept()
+        wait.until(ExpectedConditions.alertIsPresent()).accept()
     }
 }

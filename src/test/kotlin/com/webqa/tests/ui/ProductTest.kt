@@ -10,16 +10,13 @@ import org.testng.annotations.Test
 
 @Feature("Product Catalog")
 class ProductTest : BaseTest() {
-    private lateinit var homePage: HomePage
-    private lateinit var loginPage: LoginPage
+    // Getters, not fields: with parallel="methods" TestNG shares one instance across threads
+    private val homePage get() = HomePage(getDriver())
+    private val loginPage get() = LoginPage(getDriver())
 
     @BeforeMethod
     fun setup() {
         getDriver().get(baseUrl)
-
-        // Initialize page objects after navigating to the page
-        homePage = HomePage(getDriver())
-        loginPage = LoginPage(getDriver())
 
         // Login before each test
         homePage.clickLogin()

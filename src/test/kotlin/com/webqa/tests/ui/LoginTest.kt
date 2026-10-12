@@ -10,13 +10,12 @@ import org.testng.annotations.Test
 
 @Feature("Authentication")
 class LoginTest : BaseTest() {
-    private lateinit var homePage: HomePage
-    private lateinit var loginPage: LoginPage
+    // Getters, not fields: with parallel="methods" TestNG shares one instance across threads
+    private val homePage get() = HomePage(getDriver())
+    private val loginPage get() = LoginPage(getDriver())
 
     @BeforeMethod
     fun setup() {
-        homePage = HomePage(getDriver())
-        loginPage = LoginPage(getDriver())
         getDriver().get(baseUrl)
     }
 

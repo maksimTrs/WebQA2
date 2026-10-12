@@ -1,16 +1,11 @@
 package com.webqa.core.ui.pages
 
-import com.webqa.core.config.Configuration
 import com.webqa.core.ui.BasePage
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.WebDriverException
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.FindBy
 import org.openqa.selenium.support.ui.ExpectedConditions
-import org.openqa.selenium.support.ui.WebDriverWait
-import org.slf4j.LoggerFactory
-import java.time.Duration
 
 class HomePage(driver: WebDriver) : BasePage(driver) {
     @FindBy(css = "h6.MuiTypography-alignCenter")
@@ -26,8 +21,7 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
     private lateinit var loggedInUserInfo: WebElement
 
     private fun getProductCards(): List<WebElement> =
-        WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
-            .until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item")))
+        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item")))
 
     @FindBy(xpath = "//h6[text()='Chart']/../div/table")
     private lateinit var chartCart: WebElement
@@ -48,14 +42,7 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
     }
 
     fun waitForLoginComplete(expectedEmail: String) {
-        getFluentWaitInstance().until {
-            try {
-                val text = loggedInUserInfo.text.trim()
-                text.contains(expectedEmail)
-            } catch (e: WebDriverException) {
-                LoggerFactory.getLogger(this::class.java).error("Error waiting for login via $expectedEmail: ${e.message}")
-            }
-        }
+        wait.until(ExpectedConditions.textToBePresentInElement(loggedInUserInfo, expectedEmail))
     }
 
     fun getLoggedInUserEmail(): String {
