@@ -1,15 +1,16 @@
 package com.webqa.core.api.clients
 
 import com.webqa.core.api.ApiClient
-import com.webqa.core.api.models.ApiResponse
 import com.webqa.core.api.models.ProductResponse
 import io.restassured.module.kotlin.extensions.Extract
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
+import io.restassured.response.Response
 import org.apache.http.HttpStatus.SC_OK
 
 class ProductApiClient : ApiClient() {
+    /** Happy-path helper: fails fast if the catalog is unavailable. */
     fun getProducts(authToken: String): ProductResponse {
         return Given {
             spec(requestSpec)
@@ -23,7 +24,8 @@ class ProductApiClient : ApiClient() {
         }
     }
 
-    fun createOrder(authToken: String, productId: String, quantity: Int, cardDetails: Map<String, Any>): ApiResponse {
+    /** Returns the raw response: status and body are the subject of the test. */
+    fun createOrder(authToken: String, productId: String, quantity: Int, cardDetails: Map<String, Any>): Response {
         return Given {
             spec(requestSpec)
             header("Authorization", authToken)
@@ -40,10 +42,6 @@ class ProductApiClient : ApiClient() {
             )
         } When {
             post("/order/createAndPay")
-        } Then {
-            statusCode(SC_OK)
-        } Extract {
-            `as`(ApiResponse::class.java)
         }
     }
 }
