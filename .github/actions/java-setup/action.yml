@@ -1,5 +1,5 @@
-name: 'Setup Java and Gradle Environments with caches'
-description: 'Sets up Java and caches Gradle dependencies'
+name: 'Set up Java and Gradle'
+description: 'Sets up the JDK and Gradle: dependency caching and Gradle wrapper validation'
 inputs:
   java-version:
     description: 'Java version to set up'
@@ -18,16 +18,11 @@ runs:
       with:
         java-version: ${{ inputs.java-version }}
         distribution: ${{ inputs.distribution }}
-        check-latest: false
 
-    - name: Cache Gradle dependencies
-      uses: actions/cache@v6
-      id: gradle-cache
+    # Also validates gradle-wrapper.jar against the known checksums (validate-wrappers defaults to true)
+    - name: Set up Gradle
+      uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6  # v6.4.0
       with:
-        path: |
-          ~/.gradle/caches
-          ~/.gradle/wrapper
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-        enableCrossOsArchive: false
+        # MIT-licensed cache on top of actions/cache; the default "enhanced" provider is proprietary
+        # and using it means accepting the Gradle Terms of Use
+        cache-provider: basic

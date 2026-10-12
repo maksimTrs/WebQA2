@@ -2,7 +2,7 @@ name: Smoke Tests
 
 on:
   push:
-    branches: [ main, master, dev* ]
+    branches: [ master ]
   pull_request:
   workflow_dispatch:
 
@@ -13,8 +13,6 @@ concurrency:
 
 permissions:
   contents: read
-  actions: read
-  checks: write
 
 jobs:
   lint:
@@ -24,7 +22,7 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-        
+
       - name: Setup Java and Gradle Environment
         uses: ./.github/actions/java-setup
 
@@ -41,12 +39,18 @@ jobs:
 
   api-tests:
     name: API Tests
+    # Fork PRs get no secrets: the tests would fail on missing credentials, not on a defect
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-        
+
       - name: Setup Java and Gradle Environment
         uses: ./.github/actions/java-setup
 
@@ -64,6 +68,14 @@ jobs:
           files: build/test-results/test/**/*.xml
           check_name: API Test Results
 
+      - name: Upload Allure Results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-api
+          path: build/allure-results
+          retention-days: 5
+
       - name: Upload Test Reports
         if: failure() && steps.run-api-tests.outcome != 'success'
         uses: actions/upload-artifact@v7
@@ -72,43 +84,28 @@ jobs:
           path: |
             build/reports
             build/test-results
-            build/allure-results
           retention-days: 5
 
   ui-tests:
     name: UI Tests
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
-        
+
       - name: Setup Java and Gradle Environment
         uses: ./.github/actions/java-setup
 
+      # --wait returns once the hub healthcheck reports a registered node (see docker-compose.yml)
       - name: Start Selenium Grid
-        run: docker compose up -d selenium-hub chrome
-
-      - name: Check Docker containers
-        run: |
-          echo "Checking Docker containers..."
-          docker ps
-          docker logs selenium-hub
-          CHROME_CONTAINER_ID=$(docker ps -q --filter "name=chrome")
-          echo "Chrome container ID: $CHROME_CONTAINER_ID"
-          docker logs "$CHROME_CONTAINER_ID"
-
-      - name: Wait for Selenium Grid to be ready
         timeout-minutes: 3
-        run: |
-          echo "Waiting for Selenium Grid to become ready..."
-          until curl -sf http://localhost:4444/wd/hub/status | grep -qE '"ready"\s*:\s*true'; do
-            echo "Grid not ready yet, retrying in 3s..."
-            curl -s http://localhost:4444/wd/hub/status 2>/dev/null || echo "  (endpoint not responding yet)"
-            sleep 3
-          done
-          echo "Selenium Grid is ready"
-          docker ps
+        run: docker compose up -d --wait selenium-hub chrome
 
       - name: Run UI Tests
         id: run-ui-tests
@@ -125,6 +122,14 @@ jobs:
           files: build/test-results/test/**/*.xml
           check_name: UI Test Results
 
+      - name: Upload Allure Results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-results-ui
+          path: build/allure-results
+          retention-days: 5
+
       - name: Upload Test Reports
         if: failure() && steps.run-ui-tests.outcome != 'success'
         uses: actions/upload-artifact@v7
@@ -133,9 +138,77 @@ jobs:
           path: |
             build/reports
             build/test-results
-            build/allure-results
           retention-days: 5
+
+      - name: Selenium Grid Logs
+        if: failure()
+        run: docker compose logs selenium-hub chrome
 
       - name: Stop Selenium Grid
         if: always()
         run: docker compose down
+
+  allure-report:
+    name: Allure Report
+    needs: [ api-tests, ui-tests ]
+    # Runs after failed tests too: a red run is when the report matters most
+    if: always() && needs.api-tests.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Java and Gradle Environment
+        uses: ./.github/actions/java-setup
+
+      - name: Download Allure Results
+        uses: actions/download-artifact@v8
+        with:
+          pattern: allure-results-*
+          path: build/allure-results
+          merge-multiple: true
+
+      # The previous report's history powers the trend graphs; the first deployment has none
+      - name: Restore Report History
+        if: github.event_name == 'push'
+        env:
+          SITE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+        run: |
+          mkdir -p build/allure-results/history
+          for f in history.json history-trend.json duration-trend.json categories-trend.json retry-trend.json; do
+            curl -sfL "$SITE/history/$f" -o "build/allure-results/history/$f" || echo "No $f in the published report"
+          done
+
+      - name: Generate Allure Report
+        run: ./gradlew allureReport
+
+      - name: Upload Allure Report
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-report
+          path: build/reports/allure-report/allureReport
+          retention-days: 5
+
+      - name: Upload Pages Artifact
+        if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: build/reports/allure-report/allureReport
+
+  deploy-report:
+    name: Publish Allure Report
+    needs: allure-report
+    if: github.event_name == 'push' && needs.allure-report.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
