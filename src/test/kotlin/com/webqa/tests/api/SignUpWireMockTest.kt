@@ -2,6 +2,8 @@ package com.webqa.tests.api
 
 import com.webqa.core.api.clients.AuthApiClient
 import com.webqa.core.api.models.SignUpRequest
+import com.webqa.core.api.models.SignUpResponse
+import com.webqa.core.config.Configuration.Mock.WireMock
 import com.webqa.core.utils.TestDataGenerator.generateEmail
 import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseApiTest
@@ -23,9 +25,7 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
 
     @BeforeMethod
     fun setup() {
-        val port = WireMockTestExtension.port
-        logger.info("Initializing SignUpWireMockTest with WireMock port: {}", port)
-        signUpClient = AuthApiClient("http://localhost:$port")
+        signUpClient = AuthApiClient("http://${WireMock.host}:${WireMock.port}")
     }
 
     @Test(description = "Verify signup with WireMock scenario simulation")
@@ -45,12 +45,12 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
         )
 
         // First attempt should fail with email exists
-        val response1 = signUpClient.signup(request, statusCodeVal = HttpStatusExtensions.SC_BAD_REQUEST)
+        val response1 = signUpClient.signup(request).extractWithStatus<SignUpResponse>(HttpStatusExtensions.SC_BAD_REQUEST)
         logger.info("First attempt response: {}", response1)
         assertThat(response1.error?.message).contains("already exists")
 
         // Second attempt should succeed
-        val response2 = signUpClient.signup(request, statusCodeVal = HttpStatusExtensions.SC_OK)
+        val response2 = signUpClient.signup(request).extractWithStatus<SignUpResponse>(HttpStatusExtensions.SC_OK)
         logger.info("Second attempt response: {}", response2)
         assertThat(response2.message).isEqualTo("You have successfully registered")
     }
@@ -73,7 +73,7 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
         )
 
         val startTime = System.currentTimeMillis()
-        val response = signUpClient.signup(request, statusCodeVal = HttpStatusExtensions.SC_OK)
+        val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(HttpStatusExtensions.SC_OK)
         val endTime = System.currentTimeMillis()
         val actualDelay = endTime - startTime
 
@@ -99,12 +99,12 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
         )
 
         // First request should succeed
-        val response1 = signUpClient.signup(request, statusCodeVal = HttpStatusExtensions.SC_OK)
+        val response1 = signUpClient.signup(request).extractWithStatus<SignUpResponse>(HttpStatusExtensions.SC_OK)
         logger.info("First request response: {}", response1)
         assertThat(response1.message).isEqualTo("You have successfully registered")
 
         // Subsequent request should fail with rate limit
-        val response2 = signUpClient.signup(request, statusCodeVal = HttpStatusExtensions.SC_TOO_MANY_REQUESTS)
+        val response2 = signUpClient.signup(request).extractWithStatus<SignUpResponse>(HttpStatusExtensions.SC_TOO_MANY_REQUESTS)
         logger.info("Second request response: {}", response2)
         assertThat(response2.error?.message).contains("Rate limit exceeded")
     }

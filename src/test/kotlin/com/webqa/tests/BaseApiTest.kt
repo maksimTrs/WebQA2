@@ -3,8 +3,10 @@ package com.webqa.tests
 import com.webqa.core.config.Configuration.App
 import io.qameta.allure.Step
 import io.qameta.allure.okhttp3.AllureOkHttp3
+import io.restassured.response.Response
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
+import org.assertj.core.api.Assertions.assertThat
 import org.openapitools.client.apis.PetApi
 import org.testng.annotations.BeforeMethod
 import java.util.concurrent.TimeUnit
@@ -36,6 +38,14 @@ abstract class BaseApiTest {
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
             .build()
+    }
+
+    /** Asserts the status code (with the body in the failure message) and deserializes the body. */
+    protected inline fun <reified T> Response.extractWithStatus(expectedStatus: Int): T {
+        assertThat(statusCode)
+            .withFailMessage("Expected status %d but was %d. Body: %s", expectedStatus, statusCode, asString())
+            .isEqualTo(expectedStatus)
+        return `as`(T::class.java)
     }
 
     @Step("Create Pet API client")

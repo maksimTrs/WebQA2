@@ -2,6 +2,7 @@ package com.webqa.tests.api
 
 import com.webqa.core.api.clients.AuthApiClient
 import com.webqa.core.api.models.SignUpRequest
+import com.webqa.core.api.models.SignUpResponse
 import com.webqa.core.utils.TestDataGenerator.generateEmail
 import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseApiTest
@@ -45,7 +46,7 @@ class SignUpAPITest : BaseApiTest() {
             passwordConfirm = newPassword
         )
 
-        val response = signUpClient.signup(request, statusCodeVal = SC_OK)
+        val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_OK)
         assertThat(response.message)
             .withFailMessage("Expected successful registration message")
             .isEqualTo(SUCCESS_MESSAGE)
@@ -61,7 +62,7 @@ class SignUpAPITest : BaseApiTest() {
             passwordConfirm = MISMATCHED_PASSWORD_2
         )
 
-        val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
+        val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
         assertThat(response.error!!.message)
             .withFailMessage("Expected password mismatch error message")
             .isEqualTo(PASSWORD_MISMATCH_MESSAGE)
@@ -78,7 +79,7 @@ class SignUpAPITest : BaseApiTest() {
             passwordConfirm = newPassword
         )
 
-        val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
+        val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
         assertThat(response.error!!.message)
             .withFailMessage("Expected validation error for invalid email format")
             .isEqualTo(VALIDATION_ERROR_MESSAGE)
@@ -95,7 +96,7 @@ class SignUpAPITest : BaseApiTest() {
             passwordConfirm = newPassword
         )
 
-        val response = signUpClient.signup(request, statusCodeVal = SC_BAD_REQUEST)
+        val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
         assertThat(response.error!!.message)
             .withFailMessage("Expected duplicate email error message")
             .isEqualTo("Email $userEmail already exists")

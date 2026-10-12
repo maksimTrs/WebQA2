@@ -11,16 +11,11 @@ interface WireMockTestExtension {
         private const val SCENARIO_STATE_EMAIL_CHANGED = "email-changed"
         private const val SCENARIO_STATE_STARTED = "Started"
         private const val SIGNUP_ENDPOINT = "/user/signup"
-
-        @JvmStatic
-        var port: Int = 0
     }
 
     @BeforeClass
     fun setupWireMock() {
-        port = WireMockSupport.startWireMock()
-        configureFor("localhost", port)
-        logger.info("WireMock configured for localhost:{}", port)
+        WireMockSupport.startWireMock()
     }
 
     @AfterClass
