@@ -14,14 +14,14 @@ runs:
   using: 'composite'
   steps:
     - name: Set up JDK
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v6
       with:
         java-version: ${{ inputs.java-version }}
         distribution: ${{ inputs.distribution }}
         check-latest: false
 
     - name: Cache Gradle dependencies
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       id: gradle-cache
       with:
         path: |
