@@ -1,44 +1,13 @@
 package com.webqa.tests
 
 import com.webqa.core.config.Configuration.App
-import io.qameta.allure.Step
-import io.qameta.allure.okhttp3.AllureOkHttp3
 import io.restassured.response.Response
-import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import org.assertj.core.api.Assertions.assertThat
-import org.openapitools.client.apis.PetApi
-import org.testng.annotations.BeforeMethod
-import java.util.concurrent.TimeUnit
-
-private const val PET_SHOP_URL: String = "https://petstore3.swagger.io/api/v3"
 
 abstract class BaseApiTest {
-    protected val userEmail: String = App.userEmail
-    protected val userPassword: String = App.userPass
-    private lateinit var httpClient: OkHttpClient
-
-    @BeforeMethod
-    fun setUpBase() {
-        httpClient = createLoggingOkHttpClient()
-    }
-
-    @Step("Create HTTP client with logging and Allure interceptors")
-    protected fun createLoggingOkHttpClient(): OkHttpClient {
-        val loggingInterceptor = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.HEADERS
-        }
-
-        val allureInterceptor = AllureOkHttp3()
-
-        return OkHttpClient.Builder()
-            .addInterceptor(loggingInterceptor)
-            .addInterceptor(allureInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .build()
-    }
+    // Lazy: tests that never log in (e.g. WireMock) must not require credentials
+    protected val userEmail: String by lazy { App.userEmail }
+    protected val userPassword: String by lazy { App.userPass }
 
     /** Asserts the status code (with the body in the failure message) and deserializes the body. */
     protected inline fun <reified T> Response.extractWithStatus(expectedStatus: Int): T {
@@ -46,10 +15,5 @@ abstract class BaseApiTest {
             .withFailMessage("Expected status %d but was %d. Body: %s", expectedStatus, statusCode, asString())
             .isEqualTo(expectedStatus)
         return `as`(T::class.java)
-    }
-
-    @Step("Create Pet API client")
-    protected fun createPetApi(): PetApi {
-        return PetApi(PET_SHOP_URL, httpClient)
     }
 }

@@ -1,37 +1,43 @@
 package com.webqa.tests.api.pets
 
-import com.webqa.tests.BaseApiTest
 import com.webqa.tests.api.pets.data.PetTestDataFactory
 import com.webqa.tests.api.pets.verifier.PetVerifier
 import io.qameta.allure.Description
 import io.qameta.allure.Feature
 import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
-import org.openapitools.client.apis.PetApi
 import org.openapitools.client.apis.PetApi.StatusFindPetsByStatus
 import org.openapitools.client.models.Pet
-import org.testng.annotations.BeforeMethod
+import org.slf4j.LoggerFactory
+import org.testng.annotations.AfterClass
 import org.testng.annotations.Test
-import kotlin.random.Random
+import java.util.concurrent.ConcurrentHashMap
 
 @Feature("Pet Store API")
-class PetApiTest : BaseApiTest() {
+class PetApiTest {
+    private val logger = LoggerFactory.getLogger(PetApiTest::class.java)
+    private val petApi = PetStoreClient.petApi
+    private val petVerifier = PetVerifier(petApi)
 
-    private lateinit var petApi: PetApi
-    private lateinit var petVerifier: PetVerifier
+    // Thread-safe: api-tests.xml runs methods of this instance in parallel
+    private val createdPetIds: MutableSet<Long> = ConcurrentHashMap.newKeySet()
 
-    @BeforeMethod
-    fun setup() {
-        petApi = createPetApi()
-        petVerifier = PetVerifier(petApi)
+    @AfterClass(alwaysRun = true)
+    fun deleteCreatedPets() {
+        createdPetIds.forEach { id ->
+            runCatching { petApi.deletePet(id) }
+                .onFailure { logger.warn("Failed to delete pet {}: {}", id, it.message) }
+        }
     }
+
+    private fun addPet(pet: Pet): Pet = petApi.addPet(pet).also { createdPetIds.add(it.id!!) }
 
     @Test
     @Story("Pet Management")
     @Description("Add a new pet to the store")
     fun testAddNewPet() {
         val newPet = PetTestDataFactory.createTestPet()
-        val addedPet = petApi.addPet(newPet)
+        val addedPet = addPet(newPet)
 
         petVerifier.verifyPetDetails(addedPet, newPet)
     }
@@ -40,8 +46,7 @@ class PetApiTest : BaseApiTest() {
     @Story("Pet Management")
     @Description("Update an existing pet")
     fun testUpdatePet() {
-        val originalPet = PetTestDataFactory.createTestPet()
-        val addedPet = petApi.addPet(originalPet)
+        val addedPet = addPet(PetTestDataFactory.createTestPet())
 
         val updatedPet = addedPet.copy(
             name = "Updated Dog",
@@ -57,20 +62,23 @@ class PetApiTest : BaseApiTest() {
     @Story("Pet Search")
     @Description("Find pets by status 'pending'")
     fun testFindPetsByStatus() {
-        val status = StatusFindPetsByStatus.pending
-        val pets = petApi.findPetsByStatus(status)
+        val pendingPet = addPet(PetTestDataFactory.createTestPetWithStatus(Pet.Status.pending))
 
-        assertThat(pets).isNotEmpty()
-        assertThat(pets.all { it.status!!.value == status.value })
-            .withFailMessage("Not all returned pets have status: ${status.value}")
-            .isTrue()
+        val pets = petApi.findPetsByStatus(StatusFindPetsByStatus.pending)
+
+        assertThat(pets.map { it.id })
+            .withFailMessage("Created pending pet %d not found by status search", pendingPet.id)
+            .contains(pendingPet.id)
+        assertThat(pets)
+            .withFailMessage("Not all returned pets have status: pending")
+            .allMatch { it.status == Pet.Status.pending }
     }
 
     @Test
     @Story("Pet Search")
     @Description("Find pet by ID")
     fun testGetPetById() {
-        val addedPet = petApi.addPet(PetTestDataFactory.createTestPet())
+        val addedPet = addPet(PetTestDataFactory.createTestPet())
         val retrievedPet = petApi.getPetById(addedPet.id!!)
 
         petVerifier.verifyPetDetails(retrievedPet, addedPet)
@@ -80,10 +88,9 @@ class PetApiTest : BaseApiTest() {
     @Story("Pet Management")
     @Description("Delete a pet")
     fun testDeletePet() {
-        val testId: Long = Random.nextLong(15_100, 100_000)
-        val addedPet = petApi.addPet(PetTestDataFactory.createTestPet(testId))
+        val addedPet = petApi.addPet(PetTestDataFactory.createTestPet())
 
         petApi.deletePet(addedPet.id!!)
-        petVerifier.verifyPetNotFound(testId)
+        petVerifier.verifyPetNotFound(addedPet.id!!)
     }
 }

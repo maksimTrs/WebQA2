@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom
 object PetTestDataFactory {
 
     @Step("Create test pet with id: {id}")
-    fun createTestPet(id: Long = ThreadLocalRandom.current().nextLong(7000, 13_000)): Pet {
+    fun createTestPet(id: Long = randomId()): Pet {
         return Pet(
             id = id,
             name = "PetName$id",
@@ -23,10 +23,13 @@ object PetTestDataFactory {
     @Step("Create test pet with custom status: {status}")
     fun createTestPetWithStatus(
         status: Pet.Status,
-        id: Long = ThreadLocalRandom.current().nextLong(7000, 13_000)
+        id: Long = randomId()
     ): Pet {
         return createTestPet(id).copy(status = status)
     }
+
+    // Wide range: petstore3 is a shared public instance, small ranges collide with other users' data
+    private fun randomId() = ThreadLocalRandom.current().nextLong(1_000_000_000L, 9_000_000_000L)
 
     private fun createDefaultCategory() = Category(id = 1, name = "Dogs")
 

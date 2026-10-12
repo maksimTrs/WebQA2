@@ -20,6 +20,10 @@ import org.slf4j.LoggerFactory
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
+/**
+ * WireMock usage demo: stateful scenarios, delays and rate limiting.
+ * Verifies how the API client handles stubbed responses, not the real backend's behavior.
+ */
 @Feature("Authentication")
 class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
     private val logger = LoggerFactory.getLogger(SignUpWireMockTest::class.java)
@@ -40,10 +44,11 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
         // Setup WireMock for email exists scenario
         stubSignUpWithScenario(email)
 
+        val password = generatePassword()
         val request = SignUpRequest(
             email = email,
-            password = generatePassword(),
-            passwordConfirm = generatePassword()
+            password = password,
+            passwordConfirm = password
         )
 
         // First attempt should fail with email exists
@@ -68,10 +73,11 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
         // Setup WireMock with delay
         stubSignUpWithDelay(email, delayMs)
 
+        val password = generatePassword()
         val request = SignUpRequest(
             email = email,
-            password = generatePassword(),
-            passwordConfirm = generatePassword()
+            password = password,
+            passwordConfirm = password
         )
 
         val startTime = System.currentTimeMillis()
@@ -94,10 +100,11 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
         // Setup WireMock with rate limiting
         stubSignUpWithRateLimiting(email)
 
+        val password = generatePassword()
         val request = SignUpRequest(
             email = email,
-            password = generatePassword(),
-            passwordConfirm = generatePassword()
+            password = password,
+            passwordConfirm = password
         )
 
         // First request should succeed

@@ -21,16 +21,13 @@ class ProductTest : BaseTest() {
     @BeforeMethod
     fun setup() {
         getDriver().get(baseUrl)
+    }
 
-        // Login before each test
+    // Called from the test body, not @BeforeMethod: a config failure would report a broken login as SKIPPED
+    private fun loginAsTestUser() {
         homePage.clickLogin()
         loginPage.login(userEmail, userPass)
         homePage.waitForLoginComplete(userEmail)
-
-        // Wait for successful login by checking the email is displayed
-        assertThat(homePage.getLoggedInUserEmail())
-            .withFailMessage("Login failed or user email not displayed")
-            .isEqualTo(userEmail)
     }
 
     @Test
@@ -38,6 +35,7 @@ class ProductTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @Description("Verify products are displayed for logged in user")
     fun testProductsDisplayed() {
+        loginAsTestUser()
         val products = homePage.getProductsCount()
         assertThat(products)
             .withFailMessage("Expected 5 or more products to be displayed but size was: $products")
@@ -49,6 +47,7 @@ class ProductTest : BaseTest() {
     @Severity(SeverityLevel.CRITICAL)
     @Description("Verify product can be added to cart")
     fun testAddProductToCart() {
+        loginAsTestUser()
         homePage.addProductToCart(0)
 
         assertThat(homePage.isChartCartDisplayed())
