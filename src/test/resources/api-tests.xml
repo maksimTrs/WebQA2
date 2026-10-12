@@ -4,10 +4,14 @@
         <listener class-name="com.webqa.core.listeners.TestListener"/>
     </listeners>
     <test name="API Tests">
-        <classes>
-            <class name="com.webqa.tests.api.ProductApiTest"/>
-            <class name="com.webqa.tests.api.SignUpAPITest"/>
-            <class name="com.webqa.tests.api.pets.PetApiTest"/>
-        </classes>
+        <groups>
+            <run>
+                <exclude name="wiremock"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.webqa.tests.api"/>
+            <package name="com.webqa.tests.api.pets"/>
+        </packages>
     </test>
 </suite>

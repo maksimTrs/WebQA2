@@ -18,7 +18,7 @@ class ProductTest : BaseTest() {
     private val homePage get() = HomePage(getDriver())
     private val loginPage get() = LoginPage(getDriver())
 
-    @BeforeMethod
+    @BeforeMethod(alwaysRun = true)
     fun setup() {
         getDriver().get(baseUrl)
     }
@@ -36,10 +36,7 @@ class ProductTest : BaseTest() {
     @Description("Verify products are displayed for logged in user")
     fun testProductsDisplayed() {
         loginAsTestUser()
-        val products = homePage.getProductsCount()
-        assertThat(products)
-            .withFailMessage("Expected 5 or more products to be displayed but size was: $products")
-            .isGreaterThanOrEqualTo(5)
+        assertThat(homePage.getProductsCount()).describedAs("displayed products").isGreaterThanOrEqualTo(5)
     }
 
     @Test
@@ -50,11 +47,7 @@ class ProductTest : BaseTest() {
         loginAsTestUser()
         homePage.addProductToCart(0)
 
-        assertThat(homePage.isChartCartDisplayed())
-            .withFailMessage("Cart should be displayed after adding a product")
-            .isTrue
-        assertThat(homePage.getChartCartInputValue())
-            .withFailMessage("Cart should show quantity of 1 after adding one product")
-            .isEqualTo(1)
+        assertThat(homePage.isCartDisplayed()).describedAs("cart displayed after adding a product").isTrue
+        assertThat(homePage.getCartQuantity()).describedAs("cart quantity after adding one product").isEqualTo(1)
     }
 }

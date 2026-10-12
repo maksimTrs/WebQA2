@@ -6,6 +6,7 @@ import com.webqa.core.api.models.SignUpResponse
 import com.webqa.core.utils.TestDataGenerator.generateEmail
 import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseApiTest
+import com.webqa.tests.TestGroups
 import io.qameta.allure.Feature
 import io.qameta.allure.Severity
 import io.qameta.allure.SeverityLevel
@@ -13,29 +14,59 @@ import io.qameta.allure.Story
 import org.apache.http.HttpStatus.SC_BAD_REQUEST
 import org.apache.http.HttpStatus.SC_OK
 import org.assertj.core.api.Assertions.assertThat
-import org.testng.annotations.BeforeMethod
+import org.testng.annotations.DataProvider
 import org.testng.annotations.Test
 
 @Feature("Authentication")
-class SignUpAPITest : BaseApiTest() {
-
-    private lateinit var signUpClient: AuthApiClient
+class SignUpApiTest : BaseApiTest() {
+    private val signUpClient = AuthApiClient()
 
     companion object {
         private const val SUCCESS_MESSAGE = "You have successfully registered"
         private const val PASSWORD_MISMATCH_MESSAGE = "Passwords do not match"
         private const val VALIDATION_ERROR_MESSAGE = "Field Validation Error"
-        private const val INVALID_EMAIL = "invalid-email"
-        private const val MISMATCHED_PASSWORD_1 = "password1"
-        private const val MISMATCHED_PASSWORD_2 = "password2"
+        private const val VALID_PASSWORD = "secret123"
     }
 
-    @BeforeMethod
-    fun setup() {
-        signUpClient = AuthApiClient()
+    /** A rejected signup and how the API must explain it: message and "field:type" of each field error. */
+    class InvalidSignUp(
+        private val name: String,
+        val request: SignUpRequest,
+        val expectedMessage: String,
+        val expectedFieldErrors: List<String>
+    ) {
+        override fun toString() = name
     }
 
-    @Test(description = "Verify successful user registration")
+    @DataProvider
+    fun invalidSignUps(): Array<Array<Any>> = arrayOf(
+        InvalidSignUp(
+            "passwords do not match",
+            SignUpRequest(generateEmail(), "password1", "password2"),
+            PASSWORD_MISMATCH_MESSAGE,
+            listOf("password:notMatch", "passwordConfirm:notMatch")
+        ),
+        InvalidSignUp(
+            "invalid email format",
+            SignUpRequest("invalid-email", VALID_PASSWORD, VALID_PASSWORD),
+            VALIDATION_ERROR_MESSAGE,
+            listOf("email:string.email")
+        ),
+        InvalidSignUp(
+            "empty email",
+            SignUpRequest("", VALID_PASSWORD, VALID_PASSWORD),
+            VALIDATION_ERROR_MESSAGE,
+            listOf("email:any.empty", "email:string.email")
+        ),
+        InvalidSignUp(
+            "password shorter than 3 characters",
+            SignUpRequest(generateEmail(), "ab", "ab"),
+            VALIDATION_ERROR_MESSAGE,
+            listOf("password:string.min", "passwordConfirm:string.min")
+        )
+    ).map { arrayOf<Any>(it) }.toTypedArray()
+
+    @Test(description = "Verify successful user registration", groups = [TestGroups.SMOKE])
     @Story("Sign Up")
     @Severity(SeverityLevel.CRITICAL)
     fun testSuccessfulSignUp() {
@@ -47,42 +78,20 @@ class SignUpAPITest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_OK)
-        assertThat(response.message)
-            .withFailMessage("Expected successful registration message")
-            .isEqualTo(SUCCESS_MESSAGE)
+        assertThat(response.message).describedAs("registration message").isEqualTo(SUCCESS_MESSAGE)
     }
 
-    @Test(description = "Verify password mismatch validation")
+    @Test(description = "Verify invalid signup data is rejected", dataProvider = "invalidSignUps")
     @Story("Sign Up Validation")
     @Severity(SeverityLevel.NORMAL)
-    fun testSignUpWithMismatchedPasswords() {
-        val request = SignUpRequest(
-            email = generateEmail(),
-            password = MISMATCHED_PASSWORD_1,
-            passwordConfirm = MISMATCHED_PASSWORD_2
-        )
+    fun testSignUpRejectsInvalidData(case: InvalidSignUp) {
+        val response = signUpClient.signup(case.request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
+        val error = checkNotNull(response.error) { "No error in the 400 response for: $case" }
 
-        val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
-        assertThat(response.error?.message)
-            .withFailMessage("Expected password mismatch error message")
-            .isEqualTo(PASSWORD_MISMATCH_MESSAGE)
-    }
-
-    @Test(description = "Verify invalid email format validation")
-    @Story("Sign Up Validation")
-    @Severity(SeverityLevel.NORMAL)
-    fun testSignUpWithInvalidEmail() {
-        val newPassword = generatePassword()
-        val request = SignUpRequest(
-            email = INVALID_EMAIL,
-            password = newPassword,
-            passwordConfirm = newPassword
-        )
-
-        val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
-        assertThat(response.error?.message)
-            .withFailMessage("Expected validation error for invalid email format")
-            .isEqualTo(VALIDATION_ERROR_MESSAGE)
+        assertThat(error.message).describedAs("error message").isEqualTo(case.expectedMessage)
+        assertThat(error.fields.orEmpty().map { "${it.path.last()}:${it.type}" })
+            .describedAs("field errors")
+            .containsExactlyInAnyOrderElementsOf(case.expectedFieldErrors)
     }
 
     @Test(description = "Verify existing email validation")
@@ -100,8 +109,6 @@ class SignUpAPITest : BaseApiTest() {
         // a raw Postgres error ("duplicate key value violates unique constraint ..."), leaking DB internals.
         // Only the stable part of the contract is asserted until the backend restores a proper message.
         val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
-        assertThat(response.error?.message)
-            .withFailMessage("Expected an error message for an already registered email")
-            .isNotBlank()
+        assertThat(response.error?.message).describedAs("error message for an already registered email").isNotBlank()
     }
 }

@@ -5,17 +5,13 @@
     </listeners>
     <test name="Critical UI Tests">
         <parameter name="browser" value="chrome"/>
-        <classes>
-            <class name="com.webqa.tests.ui.LoginTest">
-                <methods>
-                    <include name="testSuccessfulLogin"/>
-                </methods>
-            </class>
-            <class name="com.webqa.tests.ui.SignUpUITest">
-                <methods>
-                    <include name="testSuccessfulSignUp"/>
-                </methods>
-            </class>
-        </classes>
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.webqa.tests.ui"/>
+        </packages>
     </test>
 </suite>

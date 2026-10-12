@@ -4,6 +4,7 @@ import com.webqa.core.ui.pages.SignUpPage
 import com.webqa.core.utils.TestDataGenerator.generateEmail
 import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseTest
+import com.webqa.tests.TestGroups
 import io.qameta.allure.Description
 import io.qameta.allure.Feature
 import io.qameta.allure.Severity
@@ -23,12 +24,10 @@ class SignUpUITest : BaseTest() {
     @Description("Verify sign-up button is initially disabled")
     fun testSignUpButtonInitiallyDisabled() {
         signUpPage.open()
-        assertThat(signUpPage.isSignUpButtonEnabled())
-            .withFailMessage("Sign-up button should be disabled before filling the form")
-            .isFalse()
+        assertThat(signUpPage.isSignUpButtonEnabled()).describedAs("sign-up button enabled on an empty form").isFalse()
     }
 
-    @Test
+    @Test(groups = [TestGroups.SMOKE])
     @Story("Sign Up")
     @Severity(SeverityLevel.CRITICAL)
     @Description("Verify successful user sign-up")
@@ -40,11 +39,7 @@ class SignUpUITest : BaseTest() {
         signUpPage.fillSignUpForm(email, password)
         signUpPage.clickSignUpButton()
 
-        assertThat(signUpPage.isAlertPresent())
-            .withFailMessage("Success alert should be displayed after sign-up")
-            .isTrue()
-        assertThat(signUpPage.getAlertText())
-            .withFailMessage("Alert text should confirm successful registration")
-            .isEqualTo("You have successfully registered")
+        assertThat(signUpPage.isAlertPresent()).describedAs("alert shown after sign-up").isTrue()
+        assertThat(signUpPage.getAlertText()).describedAs("alert text").isEqualTo("You have successfully registered")
     }
 }

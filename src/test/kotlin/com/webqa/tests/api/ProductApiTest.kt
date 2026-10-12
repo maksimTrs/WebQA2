@@ -7,6 +7,7 @@ import com.webqa.core.api.models.OrderResponse
 import com.webqa.core.api.models.Product
 import com.webqa.core.utils.TestDataGenerator
 import com.webqa.tests.BaseApiTest
+import com.webqa.tests.TestGroups
 import io.qameta.allure.Description
 import io.qameta.allure.Feature
 import io.qameta.allure.Severity
@@ -32,7 +33,7 @@ class ProductApiTest : BaseApiTest() {
         private const val PAID_STATUS = "paid"
     }
 
-    @BeforeClass
+    @BeforeClass(alwaysRun = true)
     fun setup() {
         authApiClient = AuthApiClient()
         productApiClient = ProductApiClient()
@@ -45,19 +46,15 @@ class ProductApiTest : BaseApiTest() {
             "No product in stock on the stand: cannot place an order"
         }
 
-    @Test
+    @Test(groups = [TestGroups.SMOKE])
     @Story("Product Retrieval")
     @Severity(SeverityLevel.CRITICAL)
     @Description("Verify the catalog is returned and every product is consistent")
     fun testGetProducts() {
         val productsResponse = productApiClient.getProducts(authToken)
 
-        assertThat(productsResponse.products)
-            .withFailMessage("Products list should not be empty")
-            .isNotEmpty
-        assertThat(productsResponse.sale)
-            .withFailMessage("Expected sale %s but was %s", EXPECTED_SALE_PERCENTAGE, productsResponse.sale)
-            .isEqualTo(EXPECTED_SALE_PERCENTAGE)
+        assertThat(productsResponse.products).describedAs("products").isNotEmpty
+        assertThat(productsResponse.sale).describedAs("sale").isEqualTo(EXPECTED_SALE_PERCENTAGE)
 
         SoftAssertions.assertSoftly { soft ->
             productsResponse.products.forEach { p ->
@@ -119,7 +116,7 @@ class ProductApiTest : BaseApiTest() {
 
         // Prefix only: "(requested N, available M)" can shift while testCreateOrder runs in parallel
         assertThat(error.error.message)
-            .withFailMessage("Expected insufficient stock error but was: %s", error.error.message)
+            .describedAs("insufficient stock error")
             .startsWith("Insufficient stock for \"${product.name}\"")
     }
 }

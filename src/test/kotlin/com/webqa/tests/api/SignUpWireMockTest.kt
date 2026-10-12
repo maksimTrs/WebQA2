@@ -7,6 +7,7 @@ import com.webqa.core.config.Configuration.Mock.WireMock
 import com.webqa.core.utils.TestDataGenerator.generateEmail
 import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseApiTest
+import com.webqa.tests.TestGroups
 import com.webqa.tests.api.wiremock.SC_TOO_MANY_REQUESTS
 import com.webqa.tests.api.wiremock.WireMockTestExtension
 import io.qameta.allure.Feature
@@ -17,7 +18,6 @@ import org.apache.http.HttpStatus.SC_BAD_REQUEST
 import org.apache.http.HttpStatus.SC_OK
 import org.assertj.core.api.Assertions.assertThat
 import org.slf4j.LoggerFactory
-import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test
 
 /**
@@ -27,14 +27,9 @@ import org.testng.annotations.Test
 @Feature("Authentication")
 class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
     private val logger = LoggerFactory.getLogger(SignUpWireMockTest::class.java)
-    private lateinit var signUpClient: AuthApiClient
+    private val signUpClient = AuthApiClient("http://${WireMock.host}:${WireMock.port}")
 
-    @BeforeMethod
-    fun setup() {
-        signUpClient = AuthApiClient("http://${WireMock.host}:${WireMock.port}")
-    }
-
-    @Test(description = "Verify signup with WireMock scenario simulation")
+    @Test(description = "Verify signup with WireMock scenario simulation", groups = [TestGroups.WIREMOCK])
     @Story("WireMock Sign Up Scenarios")
     @Severity(SeverityLevel.NORMAL)
     fun testSignUpScenario() {
@@ -62,7 +57,7 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
         assertThat(response2.message).isEqualTo("You have successfully registered")
     }
 
-    @Test(description = "Verify signup with simulated network delay")
+    @Test(description = "Verify signup with simulated network delay", groups = [TestGroups.WIREMOCK])
     @Story("WireMock Sign Up Scenarios")
     @Severity(SeverityLevel.NORMAL)
     fun testSignUpWithDelay() {
@@ -90,7 +85,7 @@ class SignUpWireMockTest : BaseApiTest(), WireMockTestExtension {
         assertThat(actualDelay).isGreaterThanOrEqualTo(delayMs)
     }
 
-    @Test(description = "Verify signup with rate limiting")
+    @Test(description = "Verify signup with rate limiting", groups = [TestGroups.WIREMOCK])
     @Story("WireMock Sign Up Scenarios")
     @Severity(SeverityLevel.NORMAL)
     fun testSignUpRateLimiting() {

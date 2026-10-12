@@ -4,17 +4,14 @@
         <listener class-name="com.webqa.core.listeners.TestListener"/>
     </listeners>
     <test name="Critical API Tests">
-        <classes>
-            <class name="com.webqa.tests.api.SignUpAPITest">
-                <methods>
-                    <include name="testSuccessfulSignUp"/>
-                </methods>
-            </class>
-            <class name="com.webqa.tests.api.ProductApiTest">
-                <methods>
-                    <include name="testGetProducts"/>
-                </methods>
-            </class>
-        </classes>
+        <groups>
+            <run>
+                <include name="smoke"/>
+            </run>
+        </groups>
+        <packages>
+            <package name="com.webqa.tests.api"/>
+            <package name="com.webqa.tests.api.pets"/>
+        </packages>
     </test>
 </suite>

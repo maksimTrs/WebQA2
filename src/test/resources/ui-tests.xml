@@ -5,18 +5,14 @@
     </listeners>
     <test name="Chrome Tests">
         <parameter name="browser" value="chrome"/>
-        <classes>
-            <class name="com.webqa.tests.ui.LoginTest"/>
-            <class name="com.webqa.tests.ui.ProductTest"/>
-            <class name="com.webqa.tests.ui.SignUpUITest"/>
-        </classes>
+        <packages>
+            <package name="com.webqa.tests.ui"/>
+        </packages>
     </test>
     <test name="Firefox Tests">
         <parameter name="browser" value="firefox"/>
-        <classes>
-            <class name="com.webqa.tests.ui.LoginTest"/>
-            <class name="com.webqa.tests.ui.ProductTest"/>
-            <class name="com.webqa.tests.ui.SignUpUITest"/>
-        </classes>
+        <packages>
+            <package name="com.webqa.tests.ui"/>
+        </packages>
     </test>
 </suite>
