@@ -1,5 +1,7 @@
 # WebQA Test Automation Framework
 
+[![Smoke Tests](https://github.com/maksimTrs/WebQA2/actions/workflows/smoke.yml/badge.svg?branch=master)](https://github.com/maksimTrs/WebQA2/actions/workflows/smoke.yml)
+
 UI and API test automation for the WebQA demo shop, written in Kotlin on TestNG, Selenium WebDriver and REST Assured.
 
 ## Architecture
