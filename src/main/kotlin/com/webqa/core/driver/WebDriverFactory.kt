@@ -35,8 +35,9 @@ object WebDriverFactory {
     private const val RETRY_DELAY_MS = 2000L
     private const val HEALTH_CHECK_TIMEOUT_MS = 5000
 
-    private val isRemote: Boolean by lazy { System.getProperty("remote")?.toBoolean() ?: Configuration.isRemote }
-    private val gridUrl: String by lazy { System.getProperty("selenium.grid.url", Configuration.gridUrl) }
+    // Set by Gradle from -Dremote=true; absent (local) when a test is started from the IDE
+    private val isRemote: Boolean by lazy { System.getProperty("remote").toBoolean() }
+    private val gridUrl: String get() = Configuration.gridUrl
 
     private val localFactory by lazy { LocalDriverFactory() }
     private val remoteFactory by lazy { RemoteDriverFactory(gridUrl) }
