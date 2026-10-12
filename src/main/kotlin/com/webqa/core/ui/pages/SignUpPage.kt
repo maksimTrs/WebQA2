@@ -25,7 +25,6 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
     @FindBy(css = "button[type='submit']")
     private lateinit var signUpButton: WebElement
 
-
     fun open() {
         driver.get(URL)
     }
@@ -61,6 +60,7 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
         enterConfirmPassword(password)
     }
 
+    @Suppress("SwallowedException") // timeout is the expected "no alert" outcome
     fun isAlertPresent(): Boolean {
         return try {
             wait.until(ExpectedConditions.alertIsPresent())

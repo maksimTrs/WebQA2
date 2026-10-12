@@ -28,7 +28,7 @@
     <!-- Logger for test execution -->
     <logger name="com.webqa.core.listeners.TestListener" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="TEST_EXECUTION"/>
+        <appender-ref ref="FILE"/>
     </logger>
 
     <!-- Set logging levels -->

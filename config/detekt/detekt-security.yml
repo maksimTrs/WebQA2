@@ -70,15 +70,6 @@ coroutines:
   SuspendFunWithFlowReturnType:
     active: true
 
-libraries:
-  active: true
-  ForbiddenPublicDataClass:
-    active: true
-  LibraryEntitiesShouldNotBePublic:
-    active: true
-  LibraryCodeMustSpecifyReturnType:
-    active: true
-
 style:
   active: true
   UseIsNullOrEmpty:

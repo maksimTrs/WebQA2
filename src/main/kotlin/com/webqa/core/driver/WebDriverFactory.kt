@@ -3,10 +3,16 @@ package com.webqa.core.driver
 import com.webqa.core.config.Configuration
 import org.openqa.selenium.Dimension
 import org.openqa.selenium.WebDriver
+import org.openqa.selenium.WebDriverException
 import org.slf4j.LoggerFactory
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 import java.time.Duration
+
+private const val DEFAULT_WINDOW_WIDTH = 1920
+private const val DEFAULT_WINDOW_HEIGHT = 1080
+private const val DEFAULT_PAGE_TIMEOUT_SECONDS = 30L
 
 /**
  * Simple configuration for driver options.
@@ -15,10 +21,10 @@ import java.time.Duration
 data class DriverOptions(
     val headless: Boolean = false,
     val incognito: Boolean = true,
-    val windowSize: Dimension = Dimension(1920, 1080),
+    val windowSize: Dimension = Dimension(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT),
     val maximized: Boolean = false,
-    val pageLoadTimeout: Duration = Duration.ofSeconds(30),
-    val scriptTimeout: Duration = Duration.ofSeconds(30),
+    val pageLoadTimeout: Duration = Duration.ofSeconds(DEFAULT_PAGE_TIMEOUT_SECONDS),
+    val scriptTimeout: Duration = Duration.ofSeconds(DEFAULT_PAGE_TIMEOUT_SECONDS),
     val acceptInsecureCerts: Boolean = false,
     val additionalArguments: List<String> = emptyList()
 )
@@ -76,7 +82,7 @@ object WebDriverFactory {
             }
 
             logger.debug("Driver initialized with timeouts and window configuration")
-        } catch (e: Exception) {
+        } catch (e: WebDriverException) {
             logger.error("Failed to initialize driver: ${e.message}", e)
             runCatching { driver.quit() }
             throw DriverCreationException("Driver initialization failed", e)
@@ -85,24 +91,24 @@ object WebDriverFactory {
 
     private fun ensureGridHealthy() {
         val statusUrl = gridUrl.replace("/wd/hub", "/status")
-        try {
-            val connection = (URL(statusUrl).openConnection() as HttpURLConnection).apply {
-                requestMethod = "GET"
+        val responseCode = try {
+            (URL(statusUrl).openConnection() as HttpURLConnection).run {
                 connectTimeout = HEALTH_CHECK_TIMEOUT_MS
                 readTimeout = HEALTH_CHECK_TIMEOUT_MS
+                try {
+                    responseCode
+                } finally {
+                    disconnect()
+                }
             }
-
-            if (connection.responseCode != 200) {
-                connection.disconnect()
-                throw DriverCreationException("Selenium Grid unhealthy at $statusUrl")
-            }
-            connection.disconnect()
-            logger.debug("Selenium Grid is healthy")
-        } catch (e: DriverCreationException) {
-            throw e
-        } catch (e: Exception) {
-            throw DriverCreationException("Cannot reach Selenium Grid at ${gridUrl}", e)
+        } catch (e: IOException) {
+            throw DriverCreationException("Cannot reach Selenium Grid at $statusUrl", e)
         }
+
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            throw DriverCreationException("Selenium Grid unhealthy at $statusUrl (HTTP $responseCode)")
+        }
+        logger.debug("Selenium Grid is healthy")
     }
 
     private fun <T> executeWithRetry(operationName: String, operation: () -> T): T {
@@ -120,9 +126,6 @@ object WebDriverFactory {
                     logger.warn("Attempt ${attempt + 1} failed: ${e.message}. Retrying in ${RETRY_DELAY_MS}ms...")
                     Thread.sleep(RETRY_DELAY_MS)
                 }
-            } catch (e: Exception) {
-                logger.error("Non-retryable exception: ${e.message}")
-                throw e
             }
         }
 

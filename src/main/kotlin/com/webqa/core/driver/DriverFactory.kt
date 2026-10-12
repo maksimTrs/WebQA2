@@ -2,6 +2,7 @@ package com.webqa.core.driver
 
 import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.WebDriver
+import org.openqa.selenium.WebDriverException
 import org.openqa.selenium.chrome.ChromeDriver
 import org.openqa.selenium.firefox.FirefoxDriver
 import org.openqa.selenium.remote.RemoteWebDriver
@@ -53,11 +54,11 @@ class RemoteDriverFactory(private val gridUrl: String) : DriverFactory {
             RemoteWebDriver(URL(gridUrl), browser.buildCapabilities(options)).also {
                 logger.info("Remote ${browser.browserName} driver created successfully")
             }
-        } catch (e: Exception) {
+        } catch (e: WebDriverException) {
             logger.error("Failed to create remote driver: ${e.message}", e)
             throw DriverCreationException(
                 "Failed to connect to Selenium Grid at $gridUrl. " +
-                        "Ensure the grid is running and accessible.",
+                    "Ensure the grid is running and accessible.",
                 e
             )
         }

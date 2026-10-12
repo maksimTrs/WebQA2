@@ -4,7 +4,11 @@ import com.webqa.core.ui.pages.SignUpPage
 import com.webqa.core.utils.TestDataGenerator.generateEmail
 import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseTest
-import io.qameta.allure.*
+import io.qameta.allure.Description
+import io.qameta.allure.Feature
+import io.qameta.allure.Severity
+import io.qameta.allure.SeverityLevel
+import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.Test
 

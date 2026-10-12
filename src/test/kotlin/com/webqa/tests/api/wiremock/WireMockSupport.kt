@@ -17,10 +17,6 @@ object WireMockSupport {
 
     fun resetMappings() {
         logger.info("Resetting WireMock mappings")
-        try {
-            WireMock.reset()
-        } catch (e: Exception) {
-            logger.error("Error resetting WireMock: {}", e.message)
-        }
+        WireMock.reset()
     }
 }

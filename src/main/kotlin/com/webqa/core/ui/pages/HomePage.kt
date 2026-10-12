@@ -18,7 +18,11 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
     private lateinit var loggedInUserInfo: WebElement
 
     private fun getProductCards(): List<WebElement> =
-        wait.until(ExpectedConditions.presenceOfAllElementsLocatedBy(By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item")))
+        wait.until(
+            ExpectedConditions.presenceOfAllElementsLocatedBy(
+                By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item")
+            )
+        )
 
     @FindBy(xpath = "//h6[text()='Chart']/../div/table")
     private lateinit var chartCart: WebElement

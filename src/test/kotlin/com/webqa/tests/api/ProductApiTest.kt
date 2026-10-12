@@ -4,7 +4,11 @@ import com.webqa.core.api.clients.AuthApiClient
 import com.webqa.core.api.clients.ProductApiClient
 import com.webqa.core.utils.TestDataGenerator
 import com.webqa.tests.BaseApiTest
-import io.qameta.allure.*
+import io.qameta.allure.Description
+import io.qameta.allure.Feature
+import io.qameta.allure.Severity
+import io.qameta.allure.SeverityLevel
+import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
 import org.testng.annotations.BeforeClass

@@ -21,7 +21,10 @@ object PetTestDataFactory {
     }
 
     @Step("Create test pet with custom status: {status}")
-    fun createTestPetWithStatus(status: Pet.Status, id: Long = ThreadLocalRandom.current().nextLong(7000, 13_000)): Pet {
+    fun createTestPetWithStatus(
+        status: Pet.Status,
+        id: Long = ThreadLocalRandom.current().nextLong(7000, 13_000)
+    ): Pet {
         return createTestPet(id).copy(status = status)
     }
 

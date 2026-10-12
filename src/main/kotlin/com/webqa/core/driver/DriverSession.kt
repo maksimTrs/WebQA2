@@ -1,6 +1,7 @@
 package com.webqa.core.driver
 
 import org.openqa.selenium.WebDriver
+import org.openqa.selenium.WebDriverException
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
@@ -12,10 +13,12 @@ object DriverSession {
     private val activeDrivers: MutableSet<WebDriver> = ConcurrentHashMap.newKeySet()
 
     init {
-        Runtime.getRuntime().addShutdownHook(Thread {
-            logger.info("Shutdown hook triggered - cleaning up active drivers")
-            quitAll()
-        })
+        Runtime.getRuntime().addShutdownHook(
+            Thread {
+                logger.info("Shutdown hook triggered - cleaning up active drivers")
+                quitAll()
+            }
+        )
     }
 
     fun set(driver: WebDriver) {
@@ -34,7 +37,7 @@ object DriverSession {
         return driverThreadLocal.get()
             ?: throw IllegalStateException(
                 "No WebDriver found for thread ${Thread.currentThread().id}. " +
-                        "Call WebDriverFactory.createDriver() first."
+                    "Call WebDriverFactory.createDriver() first."
             )
     }
 
@@ -47,7 +50,9 @@ object DriverSession {
         driverThreadLocal.remove()
         activeDrivers.remove(driver)
         quitSafely(driver)
-        logger.info("Driver quit for thread ${Thread.currentThread().id}. Remaining active drivers: ${activeDrivers.size}")
+        logger.info(
+            "Driver quit for thread ${Thread.currentThread().id}. Remaining active drivers: ${activeDrivers.size}"
+        )
     }
 
     private fun quitAll() {
@@ -67,7 +72,7 @@ object DriverSession {
     private fun quitSafely(driver: WebDriver) {
         try {
             driver.quit()
-        } catch (e: Exception) {
+        } catch (e: WebDriverException) {
             logger.error("Error quitting driver: ${e.message}", e)
         }
     }

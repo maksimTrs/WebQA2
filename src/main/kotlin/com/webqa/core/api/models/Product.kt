@@ -38,7 +38,6 @@ data class Order(
     val totalSum: Int
 )
 
-
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class User(
     val id: Int,

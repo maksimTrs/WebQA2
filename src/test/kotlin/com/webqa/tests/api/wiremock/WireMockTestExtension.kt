@@ -1,6 +1,10 @@
 package com.webqa.tests.api.wiremock
 
-import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath
+import com.github.tomakehurst.wiremock.client.WireMock.post
+import com.github.tomakehurst.wiremock.client.WireMock.stubFor
+import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
 import org.slf4j.LoggerFactory
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
@@ -79,6 +83,8 @@ interface WireMockTestExtension {
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
                 .willReturn(WireMockResponseBuilder.rateLimited().build())
         )
-        logger.info("Rate limiting scenario stubbed: first request will succeed, subsequent requests will be rate limited")
+        logger.info(
+            "Rate limiting scenario stubbed: first request will succeed, subsequent requests will be rate limited"
+        )
     }
 }

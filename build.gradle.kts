@@ -54,7 +54,6 @@ dependencies {
 
     testImplementation("ch.qos.logback:logback-classic:1.4.11")
     testImplementation("org.slf4j:slf4j-api:2.0.9")
-    testImplementation("org.codehaus.janino:janino:3.1.10")
 
     implementation("com.squareup.moshi:moshi:1.14.0")
     // For Kotlin support
@@ -62,26 +61,25 @@ dependencies {
 
     // Detekt
     detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.5")
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-libraries:1.23.5")
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-ruleauthors:1.23.5")
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-complexity:1.23.5")
-    // Security rules
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-rules-coroutines:1.23.5")
 }
 
 // OpenAPI Generator configuration
 openApiGenerate {
     generatorName.set("kotlin")
     inputSpec.set("$rootDir/src/main/resources/petstore-openapi.json")
-    outputDir.set("${buildDir}/generate-resources")
+    outputDir.set(layout.buildDirectory.dir("generate-resources").get().asFile.path)
 }
 
 // Load .env file into environment for test tasks
 val dotEnv = rootProject.file(".env")
     .takeIf { it.exists() }
     ?.readLines()
-    ?.filter { it.isNotBlank() && !it.startsWith("#") }
-    ?.associate { line -> line.split("=", limit = 2).let { it[0].trim() to it[1].trim() } }
+    ?.map { it.trim() }
+    ?.filter { it.isNotEmpty() && !it.startsWith("#") && "=" in it }
+    ?.associate { line ->
+        val (key, value) = line.split("=", limit = 2)
+        key.trim() to value.trim().removeSurrounding("\"").removeSurrounding("'")
+    }
     ?: emptyMap()
 
 tasks.test {
@@ -108,7 +106,7 @@ tasks.test {
 sourceSets {
     main {
         kotlin {
-            srcDir("$buildDir/generate-resources/src/main")
+            srcDir(layout.buildDirectory.dir("generate-resources/src/main"))
         }
     }
 }
@@ -154,6 +152,6 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
 }
 
 tasks.register<Delete>("cleanOpenApiGenerated") {
-    delete("${buildDir}/generate-resources")
+    delete(layout.buildDirectory.dir("generate-resources"))
 }
 // ./gradlew openApiGenerate

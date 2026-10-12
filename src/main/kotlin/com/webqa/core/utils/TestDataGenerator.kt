@@ -4,6 +4,7 @@ import net.datafaker.Faker
 import java.time.YearMonth
 import java.util.UUID
 
+@Suppress("MagicNumber") // literal ranges describe the test data better than named constants
 object TestDataGenerator {
     private val faker = Faker()
 

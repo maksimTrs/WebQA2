@@ -3,7 +3,11 @@ package com.webqa.tests.ui
 import com.webqa.core.ui.pages.HomePage
 import com.webqa.core.ui.pages.LoginPage
 import com.webqa.tests.BaseTest
-import io.qameta.allure.*
+import io.qameta.allure.Description
+import io.qameta.allure.Feature
+import io.qameta.allure.Severity
+import io.qameta.allure.SeverityLevel
+import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
 import org.testng.annotations.BeforeMethod
 import org.testng.annotations.Test

@@ -4,7 +4,10 @@
 /build/classes/kotlin/main/
 /build/classes/kotlin/test/
 /.idea/
-*allure*
+/.kotlin/
+/allure-results/
+/allure-report/
+.allure/
 /logs/
 
 # Environment files
