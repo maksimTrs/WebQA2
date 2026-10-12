@@ -42,23 +42,7 @@ sealed interface BrowserCapabilities {
 
                 addArguments(arguments)
 
-                val prefs = mutableMapOf<String, Any>()
-
-                options.downloadDirectory?.let {
-                    prefs["download.default_directory"] = it
-                    prefs["download.prompt_for_download"] = false
-                }
-
-                options.experimentalOptions.forEach { (key, value) ->
-                    setExperimentalOption(key, value)
-                }
-
-                if (prefs.isNotEmpty()) {
-                    setExperimentalOption("prefs", prefs)
-                }
-
                 setAcceptInsecureCerts(options.acceptInsecureCerts)
-                options.proxy?.let { setProxy(it) }
             }
         }
     }
@@ -82,14 +66,7 @@ sealed interface BrowserCapabilities {
 
                 addArguments(options.additionalArguments)
 
-                options.downloadDirectory?.let {
-                    addPreference("browser.download.dir", it)
-                    addPreference("browser.download.folderList", 2)
-                    addPreference("browser.helperApps.neverAsk.saveToDisk", "application/octet-stream")
-                }
-
                 setAcceptInsecureCerts(options.acceptInsecureCerts)
-                options.proxy?.let { setProxy(it) }
             }
         }
     }

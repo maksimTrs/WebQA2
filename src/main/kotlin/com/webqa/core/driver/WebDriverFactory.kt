@@ -2,7 +2,6 @@ package com.webqa.core.driver
 
 import com.webqa.core.config.Configuration
 import org.openqa.selenium.Dimension
-import org.openqa.selenium.Proxy
 import org.openqa.selenium.WebDriver
 import org.slf4j.LoggerFactory
 import java.net.HttpURLConnection
@@ -20,21 +19,8 @@ data class DriverOptions(
     val maximized: Boolean = false,
     val pageLoadTimeout: Duration = Duration.ofSeconds(30),
     val scriptTimeout: Duration = Duration.ofSeconds(30),
-    val proxy: Proxy? = null,
-    val downloadDirectory: String? = null,
     val acceptInsecureCerts: Boolean = false,
-    val additionalArguments: List<String> = emptyList(),
-    val experimentalOptions: Map<String, Any> = emptyMap()
-) {
-    companion object {
-        fun default() = DriverOptions()
-        fun headless() = DriverOptions(headless = true)
-    }
-}
-
-data class DriverConfiguration(
-    val isRemote: Boolean,
-    val gridUrl: String
+    val additionalArguments: List<String> = emptyList()
 )
 
 object WebDriverFactory {
@@ -43,31 +29,27 @@ object WebDriverFactory {
     private const val RETRY_DELAY_MS = 2000L
     private const val HEALTH_CHECK_TIMEOUT_MS = 5000
 
-    private val config: DriverConfiguration by lazy {
-        DriverConfiguration(
-            isRemote = System.getProperty("remote")?.toBoolean() ?: Configuration.isRemote,
-            gridUrl = System.getProperty("selenium.grid.url", Configuration.gridUrl)
-        )
-    }
+    private val isRemote: Boolean by lazy { System.getProperty("remote")?.toBoolean() ?: Configuration.isRemote }
+    private val gridUrl: String by lazy { System.getProperty("selenium.grid.url", Configuration.gridUrl) }
 
     private val localFactory by lazy { LocalDriverFactory() }
-    private val remoteFactory by lazy { RemoteDriverFactory(config.gridUrl) }
+    private val remoteFactory by lazy { RemoteDriverFactory(gridUrl) }
 
     fun createDriver(
         browser: BrowserCapabilities,
-        options: DriverOptions = DriverOptions.default()
+        options: DriverOptions = DriverOptions()
     ): WebDriver {
         logger.info(
             "Creating ${browser.browserName} driver " +
-                "(mode: ${if (config.isRemote) "remote" else "local"}, headless: ${options.headless})"
+                "(mode: ${if (isRemote) "remote" else "local"}, headless: ${options.headless})"
         )
 
         return executeWithRetry("Create ${browser.browserName} driver") {
-            if (config.isRemote) {
+            if (isRemote) {
                 ensureGridHealthy()
             }
 
-            val factory = if (config.isRemote) remoteFactory else localFactory
+            val factory = if (isRemote) remoteFactory else localFactory
             val driver = factory.createDriver(browser, options)
 
             initializeDriver(driver, options)
@@ -78,22 +60,8 @@ object WebDriverFactory {
         }
     }
 
-    fun createChromeDriver(options: DriverOptions = DriverOptions.default()): WebDriver =
-        createDriver(BrowserCapabilities.Chrome, options)
-
-    fun createFirefoxDriver(options: DriverOptions = DriverOptions.default()): WebDriver =
-        createDriver(BrowserCapabilities.Firefox, options)
-
-    fun createHeadlessChromeDriver(): WebDriver =
-        createDriver(BrowserCapabilities.Chrome, DriverOptions.headless())
-
     fun getDriver(): WebDriver = DriverSession.get()
-    fun getDriverOrNull(): WebDriver? = DriverSession.getOrNull()
-    fun hasDriver(): Boolean = DriverSession.hasDriver()
     fun quitDriver() = DriverSession.quit()
-    fun quitAllDrivers() = DriverSession.quitAll()
-    fun getActiveDriverCount(): Int = DriverSession.getActiveDriverCount()
-    fun getConfiguration(): DriverConfiguration = config
 
     private fun initializeDriver(driver: WebDriver, options: DriverOptions) {
         try {
@@ -116,7 +84,7 @@ object WebDriverFactory {
     }
 
     private fun ensureGridHealthy() {
-        val statusUrl = config.gridUrl.replace("/wd/hub", "/status")
+        val statusUrl = gridUrl.replace("/wd/hub", "/status")
         try {
             val connection = (URL(statusUrl).openConnection() as HttpURLConnection).apply {
                 requestMethod = "GET"
@@ -133,7 +101,7 @@ object WebDriverFactory {
         } catch (e: DriverCreationException) {
             throw e
         } catch (e: Exception) {
-            throw DriverCreationException("Cannot reach Selenium Grid at ${config.gridUrl}", e)
+            throw DriverCreationException("Cannot reach Selenium Grid at ${gridUrl}", e)
         }
     }
 

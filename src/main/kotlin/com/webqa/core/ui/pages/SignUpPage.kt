@@ -10,7 +10,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions
 
 class SignUpPage(driver: WebDriver) : BasePage(driver) {
     companion object {
-        private var URL = "${Configuration.App.baseUrl}/signup"
+        private val URL = "${Configuration.App.baseUrl}/signup"
     }
 
     @FindBy(id = "email")
@@ -72,9 +72,5 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
 
     fun getAlertText(): String {
         return wait.until(ExpectedConditions.alertIsPresent()).text
-    }
-
-    fun acceptAlert() {
-        wait.until(ExpectedConditions.alertIsPresent()).accept()
     }
 }

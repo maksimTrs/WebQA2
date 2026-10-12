@@ -15,23 +15,13 @@ interface WireMockTestExtension {
 
     @BeforeClass
     fun setupWireMock() {
-        WireMockSupport.startWireMock()
+        WireMockSupport.configureClient()
     }
 
     @AfterClass
     fun tearDownWireMock() {
         logger.info("Tearing down WireMock")
-        WireMockSupport.stopWireMock()
-    }
-
-    fun stubSignUpSuccess(email: String, password: String) {
-        logger.info("Stubbing successful signup for email: {}", email)
-        stubFor(
-            post(urlEqualTo(SIGNUP_ENDPOINT))
-                .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .withRequestBody(matchingJsonPath("$.password", equalTo(password)))
-                .willReturn(WireMockResponseBuilder.success().build())
-        )
+        WireMockSupport.resetMappings()
     }
 
     fun stubSignUpWithScenario(email: String) {

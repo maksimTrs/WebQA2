@@ -8,9 +8,6 @@ import org.openqa.selenium.support.FindBy
 import org.openqa.selenium.support.ui.ExpectedConditions
 
 class HomePage(driver: WebDriver) : BasePage(driver) {
-    @FindBy(css = "h6.MuiTypography-alignCenter")
-    private lateinit var welcomeText: WebElement
-
     @FindBy(css = "a[href='/login']")
     private lateinit var loginButton: WebElement
 
@@ -28,8 +25,6 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
 
     @FindBy(xpath = "//h6[text()='Chart']/../div/table//input")
     private lateinit var chartCartInputValue: WebElement
-
-    fun isWelcomeTextDisplayed(): Boolean = welcomeText.isDisplayed
 
     fun clickLogin() {
         waitForElementToBeClickable(loginButton)

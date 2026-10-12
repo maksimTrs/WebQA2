@@ -2,9 +2,14 @@ package com.webqa.tests.api.wiremock
 
 import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import org.apache.http.HttpStatus.SC_BAD_REQUEST
+import org.apache.http.HttpStatus.SC_OK
+
+/** Not defined in org.apache.http.HttpStatus (httpcore 4.4). */
+const val SC_TOO_MANY_REQUESTS = 429
 
 class WireMockResponseBuilder {
-    private var status: Int = HttpStatusExtensions.SC_OK
+    private var status: Int = SC_OK
     private var body: String = "{}"
     private var headers: Map<String, String> = mapOf("Content-Type" to "application/json")
     private var delayMs: Int = 0
@@ -29,7 +34,7 @@ class WireMockResponseBuilder {
 
     companion object {
         fun success(body: String = WireMockResponses.SUCCESS_RESPONSE) = WireMockResponseBuilder()
-            .withStatus(HttpStatusExtensions.SC_OK)
+            .withStatus(SC_OK)
             .withBody(body)
 
         fun error(status: Int, message: String) = WireMockResponseBuilder()
@@ -37,11 +42,11 @@ class WireMockResponseBuilder {
             .withBody(WireMockResponses.customErrorResponse(message))
 
         fun rateLimited() = WireMockResponseBuilder()
-            .withStatus(HttpStatusExtensions.SC_TOO_MANY_REQUESTS)
+            .withStatus(SC_TOO_MANY_REQUESTS)
             .withBody(WireMockResponses.RATE_LIMIT_RESPONSE)
 
         fun emailExists(email: String) = WireMockResponseBuilder()
-            .withStatus(HttpStatusExtensions.SC_BAD_REQUEST)
+            .withStatus(SC_BAD_REQUEST)
             .withBody(WireMockResponses.emailExistsResponse(email))
     }
 }
