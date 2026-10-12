@@ -1,0 +1,39 @@
+[versions]
+# Pinned to the Kotlin detekt 1.23.8 is built with (its detekt-cli depends on kotlin-compiler-embeddable 2.0.21)
+kotlin = "2.0.21"
+allure = "2.35.5"
+# Allure commandline used by the Gradle plugin to build the HTML report
+allure-commandline = "2.46.1"
+detekt = "1.23.8"
+jackson = "2.22.3"
+moshi = "1.15.2"
+okhttp = "4.12.0"
+rest-assured = "5.5.7"
+
+[libraries]
+testng = "org.testng:testng:7.12.0"
+assertj = "org.assertj:assertj-core:3.27.7"
+selenium = "org.seleniumhq.selenium:selenium-java:4.51.0"
+rest-assured = { module = "io.rest-assured:rest-assured", version.ref = "rest-assured" }
+rest-assured-kotlin = { module = "io.rest-assured:kotlin-extensions", version.ref = "rest-assured" }
+allure-testng = { module = "io.qameta.allure:allure-testng", version.ref = "allure" }
+allure-rest-assured = { module = "io.qameta.allure:allure-rest-assured", version.ref = "allure" }
+allure-okhttp3 = { module = "io.qameta.allure:allure-okhttp3", version.ref = "allure" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
+okhttp-logging = { module = "com.squareup.okhttp3:logging-interceptor", version.ref = "okhttp" }
+moshi = { module = "com.squareup.moshi:moshi", version.ref = "moshi" }
+moshi-kotlin = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
+# RestAssured maps Kotlin data classes through Jackson: the Kotlin module is picked up at runtime
+jackson-kotlin = { module = "com.fasterxml.jackson.module:jackson-module-kotlin", version.ref = "jackson" }
+datafaker = "net.datafaker:datafaker:2.7.0"
+typesafe-config = "com.typesafe:config:1.4.9"
+slf4j-api = "org.slf4j:slf4j-api:2.0.20"
+logback = "ch.qos.logback:logback-classic:1.6.5"
+wiremock = "org.wiremock:wiremock-standalone:3.13.2"
+detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", version.ref = "detekt" }
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+allure = "io.qameta.allure:2.12.0"
+openapi-generator = "org.openapi.generator:7.26.0"
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }

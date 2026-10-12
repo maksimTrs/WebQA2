@@ -1,6 +1,5 @@
 package com.webqa.core.driver
 
-import io.github.bonigarcia.wdm.WebDriverManager
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebDriverException
 import org.openqa.selenium.chrome.ChromeDriver
@@ -16,28 +15,13 @@ interface DriverFactory {
 class LocalDriverFactory : DriverFactory {
     private val logger = LoggerFactory.getLogger(LocalDriverFactory::class.java)
 
-    private val chromeSetup = lazy {
-        logger.debug("Setting up ChromeDriver...")
-        WebDriverManager.chromedriver().setup()
-    }
-
-    private val firefoxSetup = lazy {
-        logger.debug("Setting up FirefoxDriver...")
-        WebDriverManager.firefoxdriver().setup()
-    }
-
+    // Drivers are resolved by Selenium Manager (bundled with Selenium 4.6+)
     override fun createDriver(browser: BrowserCapabilities, options: DriverOptions): WebDriver {
         logger.info("Creating local ${browser.browserName} driver")
 
         return when (browser) {
-            is BrowserCapabilities.Chrome -> {
-                chromeSetup.value
-                ChromeDriver(browser.buildCapabilities(options))
-            }
-            is BrowserCapabilities.Firefox -> {
-                firefoxSetup.value
-                FirefoxDriver(browser.buildCapabilities(options))
-            }
+            is BrowserCapabilities.Chrome -> ChromeDriver(browser.buildCapabilities(options))
+            is BrowserCapabilities.Firefox -> FirefoxDriver(browser.buildCapabilities(options))
         }.also {
             logger.info("Local ${browser.browserName} driver created successfully")
         }

@@ -292,12 +292,13 @@
   <div class="entry">
     <div class="card">
       <span class="tag">CI</span>
-      <h3>GitHub Actions · <code>smoke.yml</code></h3>
-      <p class="dim">push to main / master / dev* · pull request · manual — a newer push cancels the outdated run</p>
+      <h3>GitHub Actions · <code>smoke.yml</code> · <code>regression.yml</code></h3>
+      <p class="dim">smoke: push to master · pull request · manual — regression: nightly · manual</p>
       <div class="jobs">
         <div class="job"><b>Lint Check</b><span>detekt + detektSecurityCheck</span></div>
         <div class="job"><b>API Tests</b><span>smoke-api.xml</span></div>
         <div class="job"><b>UI Tests</b><span>smoke-ui.xml · Grid in Docker</span></div>
+        <div class="job"><b>Allure Report</b><span>merged · GitHub Pages</span></div>
       </div>
     </div>
     <div class="card">
@@ -305,7 +306,7 @@
       <h3>Gradle</h3>
       <p class="dim"><code>.env</code> → environment of the test JVM</p>
       <div class="cmd">./gradlew test -PsuiteFile=&lt;suite.xml&gt;
-            [-Dremote=true] [--rerun]</div>
+            [-Dremote=true]</div>
     </div>
   </div>
 
@@ -319,7 +320,7 @@
     <span class="chip">ui-tests</span>
     <span class="chip">testNg</span>
     <span class="chip">regression</span>
-    <span class="note">parallel methods / tests · Chrome + Firefox</span>
+    <span class="note">by package + group · parallel methods / tests · Chrome + Firefox</span>
   </div>
 
   <div class="down to-tests"></div>
@@ -370,7 +371,7 @@
       <span class="tag">API</span>
       <h3>API tests</h3>
       <div class="path">tests/api</div>
-      <p>ProductApiTest · SignUpAPITest</p>
+      <p>ProductApiTest · SignUpApiTest</p>
       <p class="dim">status asserted with response body</p>
     </div>
     <div class="arr" style="grid-column:2; grid-row:3"></div>
@@ -381,7 +382,7 @@
       <h3>ApiClient</h3>
       <div class="path">core/api</div>
       <p>AuthApiClient · ProductApiClient</p>
-      <p class="dim">shared REST Assured spec: timeouts, logging, Allure attachments; Authorization masked, login response never logged</p>
+      <p class="dim">shared REST Assured spec: timeouts, logging, Allure attachments; Authorization masked in logs and Allure, login call never logged in full</p>
     </div>
     <div class="arr http" style="grid-column:4 / span 3; grid-row:3"><span>HTTPS · REST</span></div>
 
@@ -439,7 +440,7 @@
       <span class="tag">Reports</span>
       <h3>Results</h3>
       <div class="path">build/allure-results · build/test-results · build/reports</div>
-      <p>Allure (<code>./gradlew allureServe</code>), JUnit XML published as a CI check, detekt reports. CI uploads them on failure.</p>
+      <p>Allure (<code>./gradlew allureServe</code>; CI publishes it to GitHub Pages), JUnit XML published as a CI check, detekt reports.</p>
     </div>
   </div>
 

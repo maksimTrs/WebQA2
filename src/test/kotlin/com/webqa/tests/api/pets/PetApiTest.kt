@@ -53,9 +53,10 @@ class PetApiTest {
             status = Pet.Status.sold
         )
 
-        val result = petApi.updatePet(updatedPet)
-        assertThat(result.name).isEqualTo("Updated Dog")
-        assertThat(result.status).isEqualTo(Pet.Status.sold)
+        petVerifier.verifyPetDetails(petApi.updatePet(updatedPet), updatedPet)
+
+        // The PUT response only echoes the request: read the pet back to check the update was stored
+        petVerifier.verifyPetDetails(petApi.getPetById(addedPet.id!!), updatedPet)
     }
 
     @Test
@@ -67,11 +68,11 @@ class PetApiTest {
         val pets = petApi.findPetsByStatus(StatusFindPetsByStatus.pending)
 
         assertThat(pets.map { it.id })
-            .withFailMessage("Created pending pet %d not found by status search", pendingPet.id)
+            .describedAs("ids of pets found by status pending")
             .contains(pendingPet.id)
-        assertThat(pets)
-            .withFailMessage("Not all returned pets have status: pending")
-            .allMatch { it.status == Pet.Status.pending }
+        assertThat(pets.map { it.status })
+            .describedAs("statuses of pets found by status pending")
+            .containsOnly(Pet.Status.pending)
     }
 
     @Test

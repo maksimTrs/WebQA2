@@ -3,6 +3,7 @@ package com.webqa.tests.ui
 import com.webqa.core.ui.pages.HomePage
 import com.webqa.core.ui.pages.LoginPage
 import com.webqa.tests.BaseTest
+import com.webqa.tests.TestGroups
 import io.qameta.allure.Description
 import io.qameta.allure.Feature
 import io.qameta.allure.Severity
@@ -18,12 +19,12 @@ class LoginTest : BaseTest() {
     private val homePage get() = HomePage(getDriver())
     private val loginPage get() = LoginPage(getDriver())
 
-    @BeforeMethod
+    @BeforeMethod(alwaysRun = true)
     fun setup() {
         getDriver().get(baseUrl)
     }
 
-    @Test
+    @Test(groups = [TestGroups.SMOKE])
     @Story("Login")
     @Severity(SeverityLevel.CRITICAL)
     @Description("Verify successful login")
@@ -34,8 +35,6 @@ class LoginTest : BaseTest() {
         // Wait for login to complete and email to be visible
         homePage.waitForLoginComplete(userEmail)
 
-        assertThat(homePage.getLoggedInUserEmail())
-            .withFailMessage("Expected logged-in user email to be '$userEmail'")
-            .isEqualTo(userEmail)
+        assertThat(homePage.getLoggedInUserEmail()).describedAs("logged-in user email").isEqualTo(userEmail)
     }
 }

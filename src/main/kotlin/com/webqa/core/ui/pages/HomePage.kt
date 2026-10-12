@@ -24,11 +24,12 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
             )
         )
 
+    // The app labels its cart "Chart"
     @FindBy(xpath = "//h6[text()='Chart']/../div/table")
-    private lateinit var chartCart: WebElement
+    private lateinit var cart: WebElement
 
     @FindBy(xpath = "//h6[text()='Chart']/../div/table//input")
-    private lateinit var chartCartInputValue: WebElement
+    private lateinit var cartQuantityInput: WebElement
 
     fun clickLogin() {
         waitForElementToBeClickable(loginButton)
@@ -65,14 +66,14 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
         addToCartButton.click()
     }
 
-    fun isChartCartDisplayed(): Boolean {
-        waitForElement(chartCart)
-        return chartCart.isDisplayed
+    fun isCartDisplayed(): Boolean {
+        waitForElement(cart)
+        return cart.isDisplayed
     }
 
-    fun getChartCartInputValue(): Int {
-        waitForElement(chartCart)
-        val value = checkNotNull(chartCartInputValue.getDomProperty("value")) { "Cart quantity input has no value" }
+    fun getCartQuantity(): Int {
+        waitForElement(cart)
+        val value = checkNotNull(cartQuantityInput.getDomProperty("value")) { "Cart quantity input has no value" }
         return value.toInt()
     }
 }

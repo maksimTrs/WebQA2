@@ -1,0 +1,66 @@
+name: Regression
+
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  regression:
+    name: Regression (Chrome, API, WireMock)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+      actions: read
+      checks: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Setup Java and Gradle Environment
+        uses: ./.github/actions/java-setup
+
+      - name: Start Selenium Grid, WireMock and Petstore
+        timeout-minutes: 3
+        run: docker compose up -d --wait selenium-hub chrome wiremock petstore
+
+      # No suite file: every test class runs once in the default browser (Chrome),
+      # i.e. regression.xml without its Firefox pass
+      - name: Run Regression
+        env:
+          TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
+          # Local container instead of the public demo, which is shared and goes down
+          PETSTORE_BASE_URL: http://localhost:8085/api/v3
+        run: ./gradlew test -Dremote=true
+
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3  # v2.24.0
+        if: always()
+        with:
+          files: build/test-results/test/**/*.xml
+          check_name: Regression Test Results
+
+      - name: Generate Allure Report
+        if: always()
+        run: ./gradlew allureReport
+
+      - name: Upload Allure Report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: allure-report-regression
+          path: build/reports/allure-report/allureReport
+          retention-days: 14
+
+      - name: Docker Logs
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop Containers
+        if: always()
+        run: docker compose down

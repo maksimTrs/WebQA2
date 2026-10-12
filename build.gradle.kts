@@ -1,10 +1,11 @@
+import org.gradle.api.tasks.testing.logging.TestExceptionFormat
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "2.0.21"
-    id("io.qameta.allure") version "2.12.0"
-    id("org.openapi.generator") version "7.26.0"
-    id("io.gitlab.arturbosch.detekt") version "1.23.8"
+    alias(libs.plugins.kotlin.jvm)
+    alias(libs.plugins.allure)
+    alias(libs.plugins.openapi.generator)
+    alias(libs.plugins.detekt)
 }
 
 group = "com.webqa"
@@ -15,59 +16,57 @@ repositories {
 }
 
 dependencies {
-    // Kotlin
-    implementation(kotlin("stdlib"))
+    implementation(libs.selenium)
 
-    // Testing
-    testImplementation("org.testng:testng:7.12.0")
+    implementation(libs.rest.assured)
+    implementation(libs.rest.assured.kotlin)
+    implementation(libs.jackson.kotlin)
 
-    // Assertions
-    testImplementation("org.assertj:assertj-core:3.27.7")
+    implementation(libs.allure.testng)
+    implementation(libs.allure.rest.assured)
+    implementation(libs.allure.okhttp3)
 
-    // Selenium
-    implementation("org.seleniumhq.selenium:selenium-java:4.51.0")
-    implementation("io.github.bonigarcia:webdrivermanager:5.9.3")
+    // Generated Petstore client
+    implementation(libs.okhttp)
+    implementation(libs.okhttp.logging)
+    implementation(libs.moshi)
+    implementation(libs.moshi.kotlin)
 
-    // REST Assured
-    implementation("io.rest-assured:rest-assured:5.5.7")
-    implementation("io.rest-assured:kotlin-extensions:5.5.7")
+    implementation(libs.datafaker)
+    implementation(libs.typesafe.config)
+    implementation(libs.slf4j.api)
 
-    // Allure
-    implementation("io.qameta.allure:allure-testng:2.35.5")
-    implementation("io.qameta.allure:allure-rest-assured:2.35.5")
-    implementation("io.qameta.allure:allure-attachments:2.35.5")
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("io.qameta.allure:allure-okhttp3:2.35.5")
+    testImplementation(libs.testng)
+    testImplementation(libs.assertj)
+    testImplementation(libs.wiremock)
+    testImplementation(libs.logback)
 
-    // Data Generation
-    implementation("net.datafaker:datafaker:2.7.0")
-
-    // Configuration
-    implementation("com.typesafe:config:1.4.9")
-
-    // JSON
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.22.3")
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.22.3")
-
-    // WireMock
-    testImplementation("org.wiremock:wiremock-standalone:3.13.2")
-
-    testImplementation("ch.qos.logback:logback-classic:1.6.5")
-    testImplementation("org.slf4j:slf4j-api:2.0.20")
-
-    implementation("com.squareup.moshi:moshi:1.15.2")
-    // For Kotlin support
-    implementation("com.squareup.moshi:moshi-kotlin:1.15.2")
-
-    // Detekt
-    detektPlugins("io.gitlab.arturbosch.detekt:detekt-formatting:1.23.8")
+    detektPlugins(libs.detekt.formatting)
 }
 
-// OpenAPI Generator configuration
 openApiGenerate {
     generatorName.set("kotlin")
     inputSpec.set("$rootDir/src/main/resources/petstore-openapi.json")
     outputDir.set(layout.buildDirectory.dir("generate-resources").get().asFile.path)
+}
+
+// Generated sources are compiled with the main source set
+sourceSets {
+    main {
+        kotlin {
+            srcDir(layout.buildDirectory.dir("generate-resources/src/main"))
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_17)
+    }
+}
+
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    dependsOn(tasks.openApiGenerate)
 }
 
 // Load .env file into environment for test tasks
@@ -94,6 +93,8 @@ tasks.test {
     }
     systemProperty("allure.results.directory", "build/allure-results")
     systemProperty("remote", System.getProperty("remote", "false"))
+    // Tests hit live stands and read .env, neither of which Gradle tracks: never skip as UP-TO-DATE
+    outputs.upToDateWhen { false }
 
     // Pass .env values as environment variables (OS env vars take precedence)
     dotEnv.forEach { (key, value) ->
@@ -102,28 +103,19 @@ tasks.test {
 
     testLogging {
         events("passed", "skipped", "failed")
-    }
-}
-
-// Add generated sources to the main source set
-sourceSets {
-    main {
-        kotlin {
-            srcDir(layout.buildDirectory.dir("generate-resources/src/main"))
-        }
+        // Full cause chain in the console: e.g. a missing TEST_USER_EMAIL is otherwise visible only in the report
+        exceptionFormat = TestExceptionFormat.FULL
     }
 }
 
 allure {
-    version = "2.46.1"
+    version = libs.versions.allure.commandline.get()
 }
 
-// Detekt configuration
 detekt {
     buildUponDefaultConfig = true
     allRules = false
     config.setFrom(files("$projectDir/config/detekt/detekt.yml"))
-    baseline = file("$projectDir/config/detekt/baseline.xml")
     parallel = true
 }
 
@@ -147,19 +139,3 @@ tasks.register<io.gitlab.arturbosch.detekt.Detekt>("detektSecurityCheck") {
     exclude("**/build/**")
     exclude("**/resources/**")
 }
-
-// Ensure OpenAPI classes are generated before compiling
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
-    }
-}
-
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn(tasks.openApiGenerate)
-}
-
-tasks.register<Delete>("cleanOpenApiGenerated") {
-    delete(layout.buildDirectory.dir("generate-resources"))
-}
-// ./gradlew openApiGenerate

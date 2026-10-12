@@ -7,30 +7,24 @@
     <!-- Chrome UI Tests -->
     <test name="Chrome UI Tests">
         <parameter name="browser" value="chrome"/>
-        <classes>
-            <class name="com.webqa.tests.ui.LoginTest"/>
-            <class name="com.webqa.tests.ui.ProductTest"/>
-            <class name="com.webqa.tests.ui.SignUpUITest"/>
-        </classes>
+        <packages>
+            <package name="com.webqa.tests.ui"/>
+        </packages>
     </test>
 
     <!-- Firefox UI Tests -->
     <test name="Firefox UI Tests">
         <parameter name="browser" value="firefox"/>
-        <classes>
-            <class name="com.webqa.tests.ui.LoginTest"/>
-            <class name="com.webqa.tests.ui.ProductTest"/>
-            <class name="com.webqa.tests.ui.SignUpUITest"/>
-        </classes>
+        <packages>
+            <package name="com.webqa.tests.ui"/>
+        </packages>
     </test>
 
-    <!-- API Tests -->
+    <!-- API Tests, including WireMock -->
     <test name="API Tests">
-        <classes>
-            <class name="com.webqa.tests.api.ProductApiTest"/>
-            <class name="com.webqa.tests.api.SignUpAPITest"/>
-            <class name="com.webqa.tests.api.pets.PetApiTest"/>
-            <class name="com.webqa.tests.api.SignUpWireMockTest"/>
-        </classes>
+        <packages>
+            <package name="com.webqa.tests.api"/>
+            <package name="com.webqa.tests.api.pets"/>
+        </packages>
     </test>
 </suite>

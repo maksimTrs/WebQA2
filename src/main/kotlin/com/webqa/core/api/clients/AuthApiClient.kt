@@ -20,7 +20,7 @@ class AuthApiClient(baseUrl: String = Configuration.Api.baseUrl) : ApiClient(bas
     /** Happy-path setup helper: fails fast if login is broken. */
     fun login(email: String, password: String): String {
         return Given {
-            spec(sensitiveResponseSpec)
+            spec(sensitiveSpec)
             body(
                 mapOf(
                     "email" to email,

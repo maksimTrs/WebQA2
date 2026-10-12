@@ -17,12 +17,14 @@ interface WireMockTestExtension {
         private const val SIGNUP_ENDPOINT = "/user/signup"
     }
 
-    @BeforeClass
+    // Reset before, not only after: an interrupted run leaves stubs and scenario states in the long-lived container
+    @BeforeClass(alwaysRun = true)
     fun setupWireMock() {
         WireMockSupport.configureClient()
+        WireMockSupport.resetMappings()
     }
 
-    @AfterClass
+    @AfterClass(alwaysRun = true)
     fun tearDownWireMock() {
         logger.info("Tearing down WireMock")
         WireMockSupport.resetMappings()
@@ -36,7 +38,7 @@ interface WireMockTestExtension {
                 .inScenario("signup-retry")
                 .whenScenarioStateIs(SCENARIO_STATE_STARTED)
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(WireMockResponseBuilder.emailExists(email).build())
+                .willReturn(WireMockResponses.emailExists(email))
                 .willSetStateTo(SCENARIO_STATE_EMAIL_CHANGED)
         )
 
@@ -45,7 +47,7 @@ interface WireMockTestExtension {
             post(urlEqualTo(SIGNUP_ENDPOINT))
                 .inScenario("signup-retry")
                 .whenScenarioStateIs(SCENARIO_STATE_EMAIL_CHANGED)
-                .willReturn(WireMockResponseBuilder.success().build())
+                .willReturn(WireMockResponses.success())
         )
         logger.info("Signup scenario stubbed: first attempt will fail, second will succeed")
     }
@@ -55,11 +57,7 @@ interface WireMockTestExtension {
         stubFor(
             post(urlEqualTo(SIGNUP_ENDPOINT))
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(
-                    WireMockResponseBuilder.success()
-                        .withDelay(delayMs.toInt())
-                        .build()
-                )
+                .willReturn(WireMockResponses.success().withFixedDelay(delayMs.toInt()))
         )
     }
 
@@ -71,7 +69,7 @@ interface WireMockTestExtension {
                 .inScenario("rate-limiting")
                 .whenScenarioStateIs(SCENARIO_STATE_STARTED)
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(WireMockResponseBuilder.success().build())
+                .willReturn(WireMockResponses.success())
                 .willSetStateTo("rate-limited")
         )
 
@@ -81,7 +79,7 @@ interface WireMockTestExtension {
                 .inScenario("rate-limiting")
                 .whenScenarioStateIs("rate-limited")
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(WireMockResponseBuilder.rateLimited().build())
+                .willReturn(WireMockResponses.rateLimited())
         )
         logger.info(
             "Rate limiting scenario stubbed: first request will succeed, subsequent requests will be rate limited"

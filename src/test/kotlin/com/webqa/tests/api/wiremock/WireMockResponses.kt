@@ -1,33 +1,25 @@
 package com.webqa.tests.api.wiremock
 
+import com.github.tomakehurst.wiremock.client.ResponseDefinitionBuilder
+import com.github.tomakehurst.wiremock.client.WireMock.aResponse
+import org.apache.http.HttpStatus.SC_BAD_REQUEST
+import org.apache.http.HttpStatus.SC_OK
+
+/** Not defined in org.apache.http.HttpStatus (httpcore 4.4). */
+const val SC_TOO_MANY_REQUESTS = 429
+
+/** Stubbed signup responses in the shape of the real API. */
 object WireMockResponses {
-    const val SUCCESS_RESPONSE = """
-        {
-            "message": "You have successfully registered"
-        }
-    """
+    fun success(): ResponseDefinitionBuilder = json(SC_OK, """{"message": "You have successfully registered"}""")
 
-    const val RATE_LIMIT_RESPONSE = """
-        {
-            "error": {
-                "message": "Rate limit exceeded. Try again later."
-            }
-        }
-    """
+    fun rateLimited(): ResponseDefinitionBuilder =
+        json(SC_TOO_MANY_REQUESTS, """{"error": {"message": "Rate limit exceeded. Try again later."}}""")
 
-    fun emailExistsResponse(email: String) = """
-        {
-            "error": {
-                "message": "Email $email already exists"
-            }
-        }
-    """
+    fun emailExists(email: String): ResponseDefinitionBuilder =
+        json(SC_BAD_REQUEST, """{"error": {"message": "Email $email already exists"}}""")
 
-    fun customErrorResponse(message: String) = """
-        {
-            "error": {
-                "message": "$message"
-            }
-        }
-    """
+    private fun json(status: Int, body: String): ResponseDefinitionBuilder = aResponse()
+        .withStatus(status)
+        .withHeader("Content-Type", "application/json")
+        .withBody(body)
 }
