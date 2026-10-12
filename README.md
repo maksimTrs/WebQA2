@@ -1,347 +1,93 @@
 # WebQA Test Automation Framework
 
-A test automation framework built with Kotlin features UI and API testing capabilities.
+UI and API test automation for the WebQA demo shop, written in Kotlin on TestNG, Selenium WebDriver and REST Assured.
 
-The framework uses TestNG for test execution, Selenium WebDriver for UI testing, and REST Assured for API testing.
+## Architecture
 
-## 🛠 Tech Stack
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/architecture-dark.svg">
+  <img alt="Tests call the WebQA app through page objects (WebDriver, local or Selenium Grid) and a shared REST Assured client, which also targets WireMock; Petstore tests use a generated OpenAPI client; everything reads one configuration" src="docs/architecture-light.svg">
+</picture>
 
-- **Language**: Kotlin
-- **Build Tool**: Gradle
-- **Testing Framework**: TestNG
-- **UI Testing**:
-    - Selenium WebDriver
-    - Selenium Grid
-- **API Testing & Mocking**:
-    - REST Assured
-    - WireMock 
-        - Docker container
-        - Response templating
-        - Stateful scenarios
-- **Assertions**: AssertJ
-- **Reporting**: Allure
-- **Configuration**:
-    - Typesafe Config
-    - Docker Compose
-    - Environment variables
-- **Data Generation**: DataFaker
-- **Logging**: Logback + SLF4J
-- **API Client Generation**: OpenAPI Generator
-- **Code Security Analysis**: Detekt
+- **UI**: page objects on explicit waits (`WebDriverWait`, no implicit waits). One driver per thread, so suites run in parallel. Chrome or Firefox, locally or on Selenium Grid. A screenshot is attached to Allure when a test fails.
+- **API**: one `ApiClient` base for all clients. It applies timeouts and logging, and every call is attached to Allure. The `Authorization` header is masked in logs, and the login response that carries the token is neither logged nor attached.
+- **Mocks**: the same client can point at a WireMock container, which serves stateful scenarios, delays and rate limiting (`SignUpWireMockTest`).
+- **Petstore**: a client generated from `petstore-openapi.json` by OpenAPI Generator. Tests delete the pets they create.
+- **Config**: `application.conf` (Typesafe Config) with environment-variable overrides. A missing `TEST_USER_EMAIL` / `TEST_PASSWORD` fails the run immediately with a clear message.
 
-## 🗂 Project Structure
+Stack: Kotlin · Gradle · TestNG · Selenium 4 · REST Assured · WireMock · AssertJ · Allure · DataFaker · detekt.
 
-```
-src
-├── main/kotlin/com/webqa
-│   └── core
-│       ├── api               # API clients and models
-│       ├── config            # Configuration classes
-│       ├── driver            # WebDriver factory and configuration
-│       ├── ui                # Page objects and UI components
-│       └── utils             # Utility classes
-└── test/kotlin/com/webqa
-    └── tests
-        ├── BaseApiTest.kt    # Base class for API tests
-        ├── BaseTest.kt       # Base class for all tests
-        ├── api               # API test implementations
-        │   └── wiremock      # WireMock test utilities
-        │       ├── WireMockResponseBuilder.kt # Fluent response builder
-        │       ├── WireMockResponses.kt       # Response templates
-        │       ├── WireMockSupport.kt         # WireMock setup/teardown
-        │       └── SignUpWireMockTest.kt      # WireMock test examples
-        └── ui                # UI test implementations
+## Setup
 
-Configuration Files:
-├─ src/main/resources
-│   ├─ allure.properties     # Allure reporting configuration
-│   ├─ application.conf      # Application configuration
-│   └─ petstore-openapi.json # OpenAPI specification
-├─ src/test/resources
-│   ├─ api-tests.xml         # API tests configuration
-│   ├─ logback-test.xml      # Test logging configuration
-│   ├─ regression.xml        # Full regression suite
-│   ├─ smoke-api.xml         # Smoke API suite (CI)
-│   ├─ smoke-ui.xml          # Smoke UI suite (CI)
-│   ├─ testNg.xml            # Main TestNG configuration
-│   └─ ui-tests.xml          # UI tests configuration (parallel)
-├─ .github/workflows
-│   └─ smoke.yml             # GitHub Actions workflow for CI/CD
-├─ .env.example              # Template for environment variables (credentials, config overrides)
-└─ docker-compose.yml        # FF, Chrome browser and Wiremock services
-```
-
-## 🚀 Running Tests
-
-### Prerequisites
-
-1. Java 17
-2. Gradle installed (or use the included Gradle wrapper)
-3. Docker installed (for remote execution)
-4. Browsers installed (for local execution)
-5. Copy `.env.example` to `.env` and fill in test credentials:
+1. JDK 17.
+2. Chrome or Firefox for local UI runs. Docker for Selenium Grid and WireMock.
+3. Credentials for the test stand:
    ```bash
-   cp .env.example .env
-   # Edit .env with your TEST_USER_EMAIL and TEST_PASSWORD
+   cp .env.example .env   # then set TEST_USER_EMAIL and TEST_PASSWORD
    ```
+   Gradle passes `.env` to the tests. Real environment variables take precedence. Optional overrides (browser, URLs, headless, Grid URL) are listed in `.env.example`.
 
-### Continuous Integration with GitHub Actions
-
-The project includes GitHub Actions workflows for automated testing:
-
-#### Smoke Tests Workflow
-
-Located in `.github/workflows/smoke.yml`, this workflow:
-
-- Runs on push to main, master, and dev* branches and on pull requests
-- Can be triggered manually via GitHub UI
-- A newer push to the same branch or PR cancels the outdated run
-- Executes three independent jobs in parallel:
-  1. **Lint Check**: Runs `detekt` and `detektSecurityCheck` (fails the workflow on any issue)
-  2. **API Tests**: Runs `smoke-api.xml`
-  3. **UI Tests**: Runs `smoke-ui.xml` using Selenium Grid with Chrome
-- Test credentials are injected via GitHub Secrets (`TEST_USER_EMAIL`, `TEST_PASSWORD`)
-- Uses caching for Gradle dependencies to speed up builds
-- Uploads test reports (`build/reports`, `build/test-results`, `build/allure-results`) for failed jobs
-- Automatically starts and stops Selenium Grid in Docker containers
-
-To view test results:
-1. Go to the Actions tab in your GitHub repository
-2. Select the latest workflow run
-3. Download artifacts for any failed tests
-4. For UI test failures with Allure reports, run `allure serve build/allure-results` locally
-
-### Running UI Tests
-
-Tests can be run either locally or remotely using Docker Selenium Grid.
-
-#### Local Execution (Default)
-
-Requires browsers to be installed locally  (use <"> or <'> to wrap xml path):
-
-_Chrome (default)_
-
-`./gradlew clean test --tests com.webqa.tests.ui.LoginTest`
-
-`./gradlew clean test -PsuiteFile=src/test/resources/regression.xml`
-
-_Headless_: set `WEBDRIVER_HEADLESS=true` (env or `.env`), e.g. `WEBDRIVER_HEADLESS=true ./gradlew test --tests com.webqa.tests.ui.LoginTest`
-
-#### Remote Execution (Docker)
-
-1. Start Selenium Grid and browser containers:
+## Running tests
 
 ```bash
-docker-compose up -d
+# One class / one suite
+./gradlew test --tests com.webqa.tests.ui.LoginTest
+./gradlew test -PsuiteFile=src/test/resources/api-tests.xml
+
+# Headless
+WEBDRIVER_HEADLESS=true ./gradlew test -PsuiteFile=src/test/resources/smoke-ui.xml
 ```
 
-2. Access test execution:
+> Gradle skips a test task whose inputs have not changed, and nothing actually runs. To force a re-run, add `--rerun`, e.g. after restarting a container or changing `.env`.
 
-- Selenium Grid: `http://localhost:4444/ui`
-- Chrome VNC: `http://localhost:7900` (no password required)
-- Firefox VNC: `http://localhost:7901` (no password required)
+| Suite (`src/test/resources/`) | Content |
+|---|---|
+| `smoke-api.xml`, `smoke-ui.xml` | Critical path. Used by CI |
+| `api-tests.xml` | WebQA API and Petstore tests |
+| `ui-tests.xml` | UI tests in Chrome and Firefox in parallel |
+| `testNg.xml` | All tests except WireMock |
+| `regression.xml` | Everything, including WireMock (needs the container) |
 
-3. Run tests:
-
-`./gradlew clean test -PsuiteFile=src/test/resources/ui-tests.xml -Dremote=true`
-
-4. Stop containers:
+### Selenium Grid
 
 ```bash
-docker-compose down
+docker compose up -d selenium-hub chrome firefox
+./gradlew test -PsuiteFile=src/test/resources/ui-tests.xml -Dremote=true
 ```
 
-### Test Suites
+Grid UI: http://localhost:4444/ui. Watch a browser over VNC: Chrome at http://localhost:7900, Firefox at http://localhost:7901 (no password).
 
-The project includes several TestNG XML suites in `src/test/resources/`:
-
-1. `testNg.xml`: All tests
-2. `ui-tests.xml`: UI tests in Chrome and Firefox (parallel execution)
-3. `api-tests.xml`: API tests only
-4. `smoke-api.xml` / `smoke-ui.xml`: Critical path tests (used by CI)
-5. `regression.xml`: Full regression suite
-
-Run a specific suite (use <"> or <'> to wrap xml path):
+### WireMock
 
 ```bash
-# Local execution
-gradlew.bat test -PsuiteFile=src/test/resources/regression.xml
-
-# Remote execution (Docker)
-gradlew.bat test -PsuiteFile=src/test/resources/regression.xml -Dremote=true
+docker compose up -d wiremock      # host port: WIREMOCK_PORT, default 9999
+./gradlew test --tests com.webqa.tests.api.SignUpWireMockTest
 ```
 
-### Parallel Test Execution
+The tests register their own stubs via the admin API, so `wiremock/mappings` can stay empty.
 
-The framework supports parallel test execution across different browsers. For example, `ui-tests.xml` runs tests simultaneously in Chrome and Firefox:
-
-```xml
-
-<suite name="UI Test Suite" parallel="tests" thread-count="2">
-    <test name="Chrome Tests">
-        <parameter name="browser" value="chrome"/>
-        <classes>
-            <class name="com.webqa.tests.ui.LoginTest"/>
-            <class name="com.webqa.tests.ui.ProductTest"/>
-            <class name="com.webqa.tests.ui.SignUpUITest"/>
-        </classes>
-    </test>
-    <test name="Firefox Tests">
-        <parameter name="browser" value="firefox"/>
-        <classes>
-            <class name="com.webqa.tests.ui.LoginTest"/>
-            <class name="com.webqa.tests.ui.ProductTest"/>
-            <class name="com.webqa.tests.ui.SignUpUITest"/>
-        </classes>
-    </test>
-</suite>
-```
-
-### Browser Compatibility
-
-The framework has been tested with:
-
-#### Local Execution:
-
-- Chrome: 131.0.6778.140
-- Firefox: 133.0.3
-
-#### Remote Execution (Selenium Grid 4.27.0):
-
-- Chrome and Firefox versions are determined by the Selenium Grid Docker images in `docker-compose.yml`
-
-Browser selection:
-
-- TestNG XML: `<parameter name="browser" value="firefox"/>`
-- Default: Chrome
-
-Execution mode:
-
-- Local: Default
-- Remote: `-Dremote=true`
-
-## 📝 Test Categories
-
-### UI Tests
-
-- Login functionality
-- Sign-up process
-- Product management
-- Shopping cart operations
-
-### API Tests
-
-The framework supports two types of API testing approaches:
-
-1. **Real API Testing**
-    - Direct integration with actual API endpoints
-    - Uses REST Assured for HTTP requests
-    - Suitable for integration and end-to-end testing
-
-2. **Mock API Testing (WireMock)**
-    - Simulates API responses for controlled testing
-    - Supports various scenarios:
-        - Success/failure responses
-        - Network delays
-        - Rate limiting
-        - Custom response templates
-
-#### Running WireMock Tests
-
-1. Configure WireMock (optional):
-    - Edit `.env` file to change WireMock port (default: **9999**)
-    - Update `application.conf` mock section if needed
-
-2. Start WireMock container:
+## Reports
 
 ```bash
-docker-compose up -d wiremock
+./gradlew allureServe     # build and open the Allure report (allureReport only builds it)
 ```
 
-3. Run WireMock tests:
+Raw results are written to `build/allure-results`, JUnit XML to `build/test-results/test`.
+
+## Static analysis
 
 ```bash
-./gradlew clean test --tests "com.webqa.tests.api.SignUpWireMockTest"
+./gradlew detekt detektSecurityCheck
 ```
 
-4. Access WireMock UI:
-    - URL: `http://localhost:9999/__admin/health`
+Both tasks fail on any finding (`maxIssues: 0`). Reports are written to `build/reports/detekt/`. Config: `config/detekt/detekt.yml`, `detekt-security.yml`, `baseline.xml`.
 
+## CI
 
-#### WireMock Features
+`.github/workflows/smoke.yml` runs on pushes to `main`/`master`/`dev*`, on pull requests and manually. Three independent jobs:
 
-- **Response Templates**: Pre-defined response patterns in `WireMockResponses`
-- **Builder Pattern**: Fluent API for creating responses via `WireMockResponseBuilder`
-- **Scenario Testing**: Support for stateful behavior simulation
-- **Network Conditions**: Ability to test delays and timeouts
-- **Docker Integration**: Runs in containerized environment for consistency
+- **Lint Check**: detekt.
+- **API Tests**: `smoke-api.xml`.
+- **UI Tests**: `smoke-ui.xml` on Selenium Grid in Docker.
 
-## 📊 Test Reports
-
-The framework uses Allure for test reporting. After test execution:
-
-1. Generate Allure report:
-
-```bash
-./gradlew allureReport
-```
-
-2. Open Allure report:
-
-```bash
-./gradlew allureServe
-```
-
-## 🔧 Configuration
-
-The framework uses Typesafe Config for configuration management. Sensitive values (credentials, URLs) are loaded from environment variables with safe placeholder defaults.
-
-Main configuration files:
-
-- `application.conf`: Main configuration file (uses `${?ENV_VAR}` substitution for secrets)
-- `.env.example`: Template listing all required/optional environment variables
-- `petstore-openapi.json`: OpenAPI spec file
-- `logback-test.xml`: Logging configuration
-- `docker-compose.yml`: Docker file to run FF and Chrome instances via selenium/hub and Wiremock service
-
-## 🧪 Test Data Management
-
-- Uses DataFaker for generating test data
-
-## 🔒 Code Security Analysis
-
-The framework includes Detekt, a static code analysis tool for Kotlin with a focus on security. The implementation helps to identify potential code vulnerabilities, anti-patterns, and security issues.
-
-### Running Security Analysis
-
-Run the security analysis with the following command:
-
-```bash
-./gradlew detektSecurityCheck
-```
-
-By default, this task will:
-- Analyze all Kotlin code in the project
-- Generate reports in HTML, XML, and SARIF formats in `build/reports/detekt/`
-- Fail the build if any issues are found (maxIssues is set to 0)
-
-To run the check without failing the build on issues:
-
-```bash
-./gradlew detektSecurityCheck -Ddetekt.maxIssues=100
-```
-
-### Security Rules
-
-The security check focuses on:
-- Exception handling issues (too generic exceptions, swallowed exceptions)
-- Potential bugs (unsafe casts, null safety issues, etc.)
-- API design issues (public visibility where unnecessary)
-- Coroutine safety issues
-
-### Configuration
-
-The Detekt configuration files are located in:
-- `config/detekt/detekt.yml` - Main configuration
-- `config/detekt/detekt-security.yml` - Security-focused rules
-- `config/detekt/baseline.xml` - Baseline of accepted issues
+Credentials come from the `TEST_USER_EMAIL` and `TEST_PASSWORD` secrets. A newer push cancels the outdated run. Reports are uploaded as artifacts when a job fails.
