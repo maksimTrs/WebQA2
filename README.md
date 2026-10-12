@@ -49,8 +49,6 @@ Stack: Kotlin · Gradle · TestNG · Selenium 4 · REST Assured · WireMock · A
 WEBDRIVER_HEADLESS=true ./gradlew test -PsuiteFile=src/test/resources/smoke-ui.xml
 ```
 
-> Gradle skips a test task whose inputs have not changed, and nothing actually runs. To force a re-run, add `--rerun`, e.g. after restarting a container or changing `.env`.
-
 | Suite (`src/test/resources/`) | Content |
 |---|---|
 | `smoke-api.xml`, `smoke-ui.xml` | Group `smoke`: critical path. Used by CI |

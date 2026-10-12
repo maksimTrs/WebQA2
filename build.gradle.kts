@@ -93,6 +93,8 @@ tasks.test {
     }
     systemProperty("allure.results.directory", "build/allure-results")
     systemProperty("remote", System.getProperty("remote", "false"))
+    // Tests hit live stands and read .env, neither of which Gradle tracks: never skip as UP-TO-DATE
+    outputs.upToDateWhen { false }
 
     // Pass .env values as environment variables (OS env vars take precedence)
     dotEnv.forEach { (key, value) ->
