@@ -11,11 +11,21 @@ import io.restassured.filter.log.RequestLoggingFilter
 import io.restassured.filter.log.ResponseLoggingFilter
 import io.restassured.http.ContentType
 import io.restassured.specification.RequestSpecification
+import java.time.Duration
 
-abstract class ApiClient(baseUrl: String = Configuration.Api.baseUrl) {
-    private val timeoutMs = Configuration.Api.timeout * 1000
+abstract class ApiClient(private val baseUrl: String = Configuration.Api.baseUrl) {
+    private val timeoutMs = Duration.ofSeconds(Configuration.Api.timeout.toLong()).toMillis().toInt()
 
-    protected val requestSpec: RequestSpecification = RequestSpecBuilder()
+    protected val requestSpec: RequestSpecification = buildSpec(logResponseBody = true)
+
+    /** For responses that carry secrets (auth tokens): response body is neither logged nor attached to Allure. */
+    protected val sensitiveResponseSpec: RequestSpecification = buildSpec(logResponseBody = false)
+
+    init {
+        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()
+    }
+
+    private fun buildSpec(logResponseBody: Boolean): RequestSpecification = RequestSpecBuilder()
         .setBaseUri(baseUrl)
         .setContentType(ContentType.JSON)
         .setConfig(
@@ -28,11 +38,13 @@ abstract class ApiClient(baseUrl: String = Configuration.Api.baseUrl) {
         )
         // The filter takes its blacklist from the constructor, not from LogConfig
         .addFilter(RequestLoggingFilter(LogDetail.ALL, true, System.out, true, setOf("Authorization")))
-        .addFilter(ResponseLoggingFilter())
-        .addFilter(AllureRestAssured())
+        .apply {
+            if (logResponseBody) {
+                addFilter(ResponseLoggingFilter())
+                addFilter(AllureRestAssured())
+            } else {
+                addFilter(ResponseLoggingFilter(LogDetail.STATUS))
+            }
+        }
         .build()
-
-    init {
-        RestAssured.enableLoggingOfRequestAndResponseIfValidationFails()
-    }
 }
