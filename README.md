@@ -124,6 +124,8 @@ _Chrome (default)_
 
 `./gradlew clean test -PsuiteFile=src/test/resources/regression.xml`
 
+_Headless_: set `WEBDRIVER_HEADLESS=true` (env or `.env`), e.g. `WEBDRIVER_HEADLESS=true ./gradlew test --tests com.webqa.tests.ui.LoginTest`
+
 #### Remote Execution (Docker)
 
 1. Start Selenium Grid and browser containers:

@@ -7,6 +7,7 @@ object Configuration {
     private val config: Config = ConfigFactory.load()
 
     val browser: String = config.getString("webdriver.browser")
+    val headless: Boolean = config.getBoolean("webdriver.headless")
     val timeout: Int = config.getInt("webdriver.timeout")
     val isRemote: Boolean = config.getBoolean("webdriver.isRemote")
     val gridUrl: String = config.getString("webdriver.gridUrl")

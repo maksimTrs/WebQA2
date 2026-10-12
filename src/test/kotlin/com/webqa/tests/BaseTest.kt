@@ -30,7 +30,7 @@ abstract class BaseTest {
         val browserCapabilities = BrowserCapabilities.fromString(browserName)
         logger.info("Initializing test with browser: {}", browserCapabilities.browserName)
 
-        val options = DriverOptions.default()
+        val options = DriverOptions(headless = Configuration.headless)
 
         WebDriverFactory.createDriver(browserCapabilities, options).also { driver ->
             if (driver is RemoteWebDriver) {
