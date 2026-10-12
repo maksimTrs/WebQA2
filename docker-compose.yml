@@ -1,11 +1,18 @@
+# Host ports bind to 127.0.0.1: VNC has no password and the Grid / WireMock admin APIs have no auth,
+# so they must not be reachable from the local network
 services:
   selenium-hub:
     image: selenium/hub:4.49.0
     container_name: selenium-hub
+    # Only the router port: nodes reach the event bus (4442/4443) over the compose network
     ports:
-      - "4444:4444"
-      - "4443:4443"
-      - "4442:4442"
+      - "127.0.0.1:4444:4444"
+    # Healthy once at least one node has registered, so `docker compose up --wait` means "ready for sessions"
+    healthcheck:
+      test: ["CMD", "/opt/bin/check-grid.sh"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
 
   chrome:
     image: selenium/node-chrome:4.49.0
@@ -19,7 +26,7 @@ services:
       - SE_NODE_MAX_SESSIONS=4
       - SE_VNC_NO_PASSWORD=1
     ports:
-      - "7900:7900"
+      - "127.0.0.1:7900:7900"
 
   firefox:
     image: selenium/node-firefox:4.49.0
@@ -33,16 +40,28 @@ services:
       - SE_NODE_MAX_SESSIONS=4
       - SE_VNC_NO_PASSWORD=1
     ports:
-      - "7901:7900"
+      - "127.0.0.1:7901:7900"
 
   wiremock:
     image: wiremock/wiremock:3.13.2
     container_name: wiremock
     ports:
       # Container keeps the image default 8080: the image's built-in healthcheck probes that port
-      - "${WIREMOCK_PORT:-9999}:8080"
+      - "127.0.0.1:${WIREMOCK_PORT:-9999}:8080"
     volumes:
       - ./wiremock/mappings:/home/wiremock/mappings
       - ./wiremock/files:/home/wiremock/__files
     environment:
       - WIREMOCK_OPTIONS=--verbose --global-response-templating --local-response-templating
+
+  # Local Swagger Petstore: the public petstore3.swagger.io is a shared demo that goes down (HTTP 500)
+  petstore:
+    image: swaggerapi/petstore3:1.0.28
+    container_name: petstore
+    ports:
+      - "127.0.0.1:${PETSTORE_PORT:-8085}:8080"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/api/v3/openapi.json"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
