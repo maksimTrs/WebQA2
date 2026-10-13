@@ -8,7 +8,7 @@ detekt = "1.23.8"
 jackson = "2.22.3"
 moshi = "1.15.2"
 okhttp = "4.12.0"
-rest-assured = "5.5.7"
+rest-assured = "6.1.0"
 
 [libraries]
 testng = "org.testng:testng:7.12.0"
