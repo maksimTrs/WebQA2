@@ -32,21 +32,24 @@ interface WireMockTestExtension {
 
     fun stubSignUpWithScenario(email: String) {
         logger.info("Stubbing signup scenario for email: {}", email)
+        // Scenario per email and an email matcher on every stub: a leftover stub must not answer another test's request
+        val scenario = "signup-retry-$email"
         // First attempt - email already exists
         stubFor(
             post(urlEqualTo(SIGNUP_ENDPOINT))
-                .inScenario("signup-retry")
+                .inScenario(scenario)
                 .whenScenarioStateIs(SCENARIO_STATE_STARTED)
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
                 .willReturn(WireMockResponses.emailExists(email))
                 .willSetStateTo(SCENARIO_STATE_EMAIL_CHANGED)
         )
 
-        // Second attempt - success with different email
+        // Second attempt with the same email - success
         stubFor(
             post(urlEqualTo(SIGNUP_ENDPOINT))
-                .inScenario("signup-retry")
+                .inScenario(scenario)
                 .whenScenarioStateIs(SCENARIO_STATE_EMAIL_CHANGED)
+                .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
                 .willReturn(WireMockResponses.success())
         )
         logger.info("Signup scenario stubbed: first attempt will fail, second will succeed")
@@ -63,10 +66,11 @@ interface WireMockTestExtension {
 
     fun stubSignUpWithRateLimiting(email: String) {
         logger.info("Stubbing rate-limited signup for email: {}", email)
+        val scenario = "rate-limiting-$email"
         // Initial state - allow the request
         stubFor(
             post(urlEqualTo(SIGNUP_ENDPOINT))
-                .inScenario("rate-limiting")
+                .inScenario(scenario)
                 .whenScenarioStateIs(SCENARIO_STATE_STARTED)
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
                 .willReturn(WireMockResponses.success())
@@ -76,7 +80,7 @@ interface WireMockTestExtension {
         // Rate limited state - reject subsequent requests
         stubFor(
             post(urlEqualTo(SIGNUP_ENDPOINT))
-                .inScenario("rate-limiting")
+                .inScenario(scenario)
                 .whenScenarioStateIs("rate-limited")
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
                 .willReturn(WireMockResponses.rateLimited())

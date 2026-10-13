@@ -2,6 +2,7 @@ package com.webqa.core.ui.pages
 
 import com.webqa.core.ui.BasePage
 import org.openqa.selenium.By
+import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.FindBy
@@ -66,9 +67,14 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
         addToCartButton.click()
     }
 
+    @Suppress("SwallowedException") // timeout is the expected "no cart" outcome
     fun isCartDisplayed(): Boolean {
-        waitForElement(cart)
-        return cart.isDisplayed
+        return try {
+            waitForElement(cart)
+            true
+        } catch (e: TimeoutException) {
+            false
+        }
     }
 
     fun getCartQuantity(): Int {

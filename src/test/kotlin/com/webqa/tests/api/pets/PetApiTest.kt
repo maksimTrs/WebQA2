@@ -89,9 +89,11 @@ class PetApiTest {
     @Story("Pet Management")
     @Description("Delete a pet")
     fun testDeletePet() {
-        val addedPet = petApi.addPet(PetTestDataFactory.createTestPet())
+        // Tracked like the others: if the delete under test fails, @AfterClass still removes the pet
+        val addedPet = addPet(PetTestDataFactory.createTestPet())
 
         petApi.deletePet(addedPet.id!!)
+        createdPetIds.remove(addedPet.id)
         petVerifier.verifyPetNotFound(addedPet.id!!)
     }
 }

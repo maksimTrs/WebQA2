@@ -100,10 +100,12 @@ class SignUpApiTest : BaseApiTest() {
     fun testSignUpWithExistingEmail() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
-            email = userEmail,
+            email = generateEmail(),
             password = newPassword,
             passwordConfirm = newPassword
         )
+        // The test registers the email itself: it does not depend on an account pre-provisioned on the stand
+        signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_OK)
 
         // Known backend issue (found 2026-10-12): instead of "Email <email> already exists" the stand returns
         // a raw Postgres error ("duplicate key value violates unique constraint ..."), leaking DB internals.
