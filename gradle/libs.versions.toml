@@ -34,6 +34,6 @@ detekt-formatting = { module = "io.gitlab.arturbosch.detekt:detekt-formatting", 
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-allure = "io.qameta.allure:2.12.0"
+allure = "io.qameta.allure:4.3.0"
 openapi-generator = "org.openapi.generator:7.26.0"
 detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
