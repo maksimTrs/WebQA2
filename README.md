@@ -100,7 +100,7 @@ Both tasks fail on any finding (`maxIssues: 0`). Reports are written to `build/r
 - **UI Tests**: `smoke-ui.xml` on Selenium Grid in Docker.
 - **Allure Report**: merges the results of both test jobs into one report, uploaded as an artifact. On `master` it is deployed to GitHub Pages.
 
-`.github/workflows/regression.yml` runs `regression.xml` nightly and manually: UI tests in Chrome and Firefox on Grid, API tests including WireMock and Petstore in local containers.
+`.github/workflows/regression.yml` runs `regression.xml` on manual dispatch only (the shared stand is too unstable for a schedule): UI tests in Chrome and Firefox on Grid, API tests including WireMock and Petstore in local containers.
 
 Credentials come from the `TEST_USER_EMAIL` and `TEST_PASSWORD` secrets. Pull requests from forks get no secrets, so they run only the lint. A newer push to a pull request cancels its outdated run; runs on `master` queue instead, so a Pages deployment is never cut off. Test and Grid reports are uploaded as artifacts when a job fails. Gradle runs through `gradle/actions/setup-gradle`, which caches dependencies and validates the wrapper jar.
 

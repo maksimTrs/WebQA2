@@ -1,8 +1,7 @@
 name: Regression
 
+# Manual only: the shared test stand is unstable, so a scheduled run would mostly report its outages
 on:
-  schedule:
-    - cron: '0 3 * * *'
   workflow_dispatch:
 
 permissions:
