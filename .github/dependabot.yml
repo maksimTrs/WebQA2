@@ -1,0 +1,31 @@
+# Pinned versions (catalog, action SHAs, compose images) only stay current if something proposes the bumps.
+# Weekly and grouped: one PR per ecosystem for minor/patch, majors separately since they need a look.
+version: 2
+updates:
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      gradle-minor:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    # "/" covers .github/workflows; the composite action lives in its own directory
+    directories: ["/", "/.github/actions/*"]
+    schedule:
+      interval: weekly
+    groups:
+      actions-minor:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: docker-compose
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      compose-minor:
+        patterns: ["*"]
+        update-types: [minor, patch]
