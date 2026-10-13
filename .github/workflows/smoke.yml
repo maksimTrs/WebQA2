@@ -6,10 +6,11 @@ on:
   pull_request:
   workflow_dispatch:
 
-# A newer push to the same branch/PR cancels the outdated run
+# A newer push to the same PR cancels the outdated run. Runs on master are queued, not cancelled:
+# cancelling one mid-way through deploy-report could leave GitHub Pages half-published
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -30,7 +31,7 @@ jobs:
         run: ./gradlew detekt detektSecurityCheck --continue
 
       - name: Upload Detekt Reports
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: detekt-reports
@@ -64,13 +65,13 @@ jobs:
 
       - name: Publish API Test Results
         uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3  # v2.24.0
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           files: build/test-results/test/**/*.xml
           check_name: API Test Results
 
       - name: Upload Allure Results
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: allure-results-api
@@ -119,13 +120,13 @@ jobs:
 
       - name: Publish UI Test Results
         uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3  # v2.24.0
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           files: build/test-results/test/**/*.xml
           check_name: UI Test Results
 
       - name: Upload Allure Results
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: allure-results-ui
@@ -153,8 +154,9 @@ jobs:
   allure-report:
     name: Allure Report
     needs: [ api-tests, ui-tests ]
-    # Runs after failed tests too: a red run is when the report matters most
-    if: always() && needs.api-tests.result != 'skipped'
+    # Runs after failed tests too: a red run is when the report matters most. Not after a cancel:
+    # a superseded run would only waste a runner
+    if: ${{ !cancelled() && needs.api-tests.result != 'skipped' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
