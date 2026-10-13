@@ -1,6 +1,7 @@
 package com.webqa.core.api.clients
 
 import com.webqa.core.api.ApiClient
+import com.webqa.core.api.models.LoginRequest
 import com.webqa.core.api.models.SignUpRequest
 import com.webqa.core.config.Configuration
 import io.restassured.module.kotlin.extensions.Extract
@@ -21,12 +22,7 @@ class AuthApiClient(baseUrl: String = Configuration.Api.baseUrl) : ApiClient(bas
     fun login(email: String, password: String): String {
         return Given {
             spec(sensitiveSpec)
-            body(
-                mapOf(
-                    "email" to email,
-                    "password" to password
-                )
-            )
+            body(LoginRequest(email, password))
         } When {
             post(LOGIN_ENDPOINT)
         } Then {

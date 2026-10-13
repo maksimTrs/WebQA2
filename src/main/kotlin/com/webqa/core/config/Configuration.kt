@@ -10,11 +10,16 @@ object Configuration {
     val headless: Boolean = config.getBoolean("webdriver.headless")
     val timeout: Int = config.getInt("webdriver.timeout")
     val gridUrl: String = config.getString("webdriver.gridUrl")
+    val remote: Boolean = config.getBoolean("webdriver.remote")
 
     object App {
         val baseUrl: String = config.getString("app.baseUrl")
-        val userEmail: String = requiredSecret("app.userEmail", "TEST_USER_EMAIL")
-        val userPass: String = requiredSecret("app.password", "TEST_PASSWORD")
+    }
+
+    // Not in App: reading App.baseUrl (e.g. the sign-up page) must not require credentials
+    object Credentials {
+        val userEmail: String = requiredSecret("credentials.userEmail", "TEST_USER_EMAIL")
+        val password: String = requiredSecret("credentials.password", "TEST_PASSWORD")
     }
 
     object Api {

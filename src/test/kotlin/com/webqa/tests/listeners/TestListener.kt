@@ -1,4 +1,4 @@
-package com.webqa.core.listeners
+package com.webqa.tests.listeners
 
 import org.slf4j.LoggerFactory
 import org.testng.ITestContext

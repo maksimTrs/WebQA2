@@ -92,7 +92,8 @@ tasks.test {
         }
     }
     systemProperty("allure.results.directory", "build/allure-results")
-    systemProperty("remote", System.getProperty("remote", "false"))
+    // -Dremote=true on the Gradle command line overrides webdriver.remote (Typesafe Config reads system properties)
+    System.getProperty("remote")?.let { systemProperty("webdriver.remote", it) }
     // Tests hit live stands and read .env, neither of which Gradle tracks: never skip as UP-TO-DATE
     outputs.upToDateWhen { false }
 

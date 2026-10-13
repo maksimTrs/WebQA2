@@ -26,7 +26,7 @@
     </appender>
 
     <!-- Logger for test execution -->
-    <logger name="com.webqa.core.listeners.TestListener" level="INFO" additivity="false">
+    <logger name="com.webqa.tests.listeners.TestListener" level="INFO" additivity="false">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
     </logger>

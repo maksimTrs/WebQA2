@@ -1,4 +1,4 @@
-package com.webqa.tests.api.pets
+package com.webqa.core.api.clients
 
 import com.webqa.core.config.Configuration
 import io.qameta.allure.okhttp3.AllureOkHttp3
@@ -9,7 +9,9 @@ import java.time.Duration
 
 /** Generated Petstore client over one shared OkHttpClient (one connection pool per run). */
 object PetStoreClient {
-    private val timeout: Duration = Duration.ofSeconds(30)
+    // Generous: the public demo is slow at times
+    private const val TIMEOUT_SECONDS = 30L
+    private val timeout: Duration = Duration.ofSeconds(TIMEOUT_SECONDS)
 
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.HEADERS })

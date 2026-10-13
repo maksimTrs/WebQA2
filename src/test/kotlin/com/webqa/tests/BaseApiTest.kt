@@ -1,13 +1,13 @@
 package com.webqa.tests
 
-import com.webqa.core.config.Configuration.App
+import com.webqa.core.config.Configuration.Credentials
 import io.restassured.response.Response
 import org.assertj.core.api.Assertions.assertThat
 
 abstract class BaseApiTest {
     // Lazy: tests that never log in (e.g. WireMock) must not require credentials
-    protected val userEmail: String by lazy { App.userEmail }
-    protected val userPassword: String by lazy { App.userPass }
+    protected val userEmail: String by lazy { Credentials.userEmail }
+    protected val userPassword: String by lazy { Credentials.password }
 
     /** Asserts the status code (with the body in the failure message) and deserializes the body. */
     protected inline fun <reified T> Response.extractWithStatus(expectedStatus: Int): T {

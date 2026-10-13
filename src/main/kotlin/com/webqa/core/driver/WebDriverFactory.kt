@@ -5,61 +5,35 @@ import org.openqa.selenium.Dimension
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebDriverException
 import org.slf4j.LoggerFactory
-import java.io.IOException
-import java.net.HttpURLConnection
-import java.net.URL
 import java.time.Duration
 
-private const val DEFAULT_WINDOW_WIDTH = 1920
-private const val DEFAULT_WINDOW_HEIGHT = 1080
-private const val DEFAULT_PAGE_TIMEOUT_SECONDS = 30L
-
-/**
- * Simple configuration for driver options.
- * Use named parameters or copy() for customization.
- */
-data class DriverOptions(
-    val headless: Boolean = false,
-    val incognito: Boolean = true,
-    val windowSize: Dimension = Dimension(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT),
-    val maximized: Boolean = false,
-    val pageLoadTimeout: Duration = Duration.ofSeconds(DEFAULT_PAGE_TIMEOUT_SECONDS),
-    val scriptTimeout: Duration = Duration.ofSeconds(DEFAULT_PAGE_TIMEOUT_SECONDS),
-    val acceptInsecureCerts: Boolean = false,
-    val additionalArguments: List<String> = emptyList()
-)
+private const val WINDOW_WIDTH = 1920
+private const val WINDOW_HEIGHT = 1080
+private const val PAGE_TIMEOUT_SECONDS = 30L
 
 object WebDriverFactory {
     private val logger = LoggerFactory.getLogger(WebDriverFactory::class.java)
     private const val MAX_RETRY_ATTEMPTS = 3
     private const val RETRY_DELAY_MS = 2000L
-    private const val HEALTH_CHECK_TIMEOUT_MS = 5000
+    private val WINDOW_SIZE = Dimension(WINDOW_WIDTH, WINDOW_HEIGHT)
+    private val PAGE_TIMEOUT: Duration = Duration.ofSeconds(PAGE_TIMEOUT_SECONDS)
 
-    // Set by Gradle from -Dremote=true; absent (local) when a test is started from the IDE
-    private val isRemote: Boolean by lazy { System.getProperty("remote").toBoolean() }
-    private val gridUrl: String get() = Configuration.gridUrl
+    private val isRemote: Boolean get() = Configuration.remote
 
     private val localFactory by lazy { LocalDriverFactory() }
-    private val remoteFactory by lazy { RemoteDriverFactory(gridUrl) }
+    private val remoteFactory by lazy { RemoteDriverFactory(Configuration.gridUrl) }
 
-    fun createDriver(
-        browser: BrowserCapabilities,
-        options: DriverOptions = DriverOptions()
-    ): WebDriver {
+    fun createDriver(browser: BrowserCapabilities, headless: Boolean): WebDriver {
         logger.info(
             "Creating ${browser.browserName} driver " +
-                "(mode: ${if (isRemote) "remote" else "local"}, headless: ${options.headless})"
+                "(mode: ${if (isRemote) "remote" else "local"}, headless: $headless)"
         )
 
         return executeWithRetry("Create ${browser.browserName} driver") {
-            if (isRemote) {
-                ensureGridHealthy()
-            }
-
             val factory = if (isRemote) remoteFactory else localFactory
-            val driver = factory.createDriver(browser, options)
+            val driver = factory.createDriver(browser, headless)
 
-            initializeDriver(driver, options)
+            initializeDriver(driver)
             DriverSession.set(driver)
 
             logger.info("Driver created successfully for thread ${Thread.currentThread().id}")
@@ -70,17 +44,14 @@ object WebDriverFactory {
     fun getDriver(): WebDriver = DriverSession.get()
     fun quitDriver() = DriverSession.quit()
 
-    private fun initializeDriver(driver: WebDriver, options: DriverOptions) {
+    private fun initializeDriver(driver: WebDriver) {
         try {
             driver.manage().timeouts().apply {
-                pageLoadTimeout(options.pageLoadTimeout)
-                scriptTimeout(options.scriptTimeout)
+                pageLoadTimeout(PAGE_TIMEOUT)
+                scriptTimeout(PAGE_TIMEOUT)
             }
-
-            when {
-                options.maximized && !options.headless -> driver.manage().window().maximize()
-                !options.maximized -> driver.manage().window().size = options.windowSize
-            }
+            // Fixed size, not maximize(): the same layout locally, headless and on Grid
+            driver.manage().window().size = WINDOW_SIZE
 
             logger.debug("Driver initialized with timeouts and window configuration")
         } catch (e: WebDriverException) {
@@ -90,28 +61,7 @@ object WebDriverFactory {
         }
     }
 
-    private fun ensureGridHealthy() {
-        val statusUrl = gridUrl.replace("/wd/hub", "/status")
-        val responseCode = try {
-            (URL(statusUrl).openConnection() as HttpURLConnection).run {
-                connectTimeout = HEALTH_CHECK_TIMEOUT_MS
-                readTimeout = HEALTH_CHECK_TIMEOUT_MS
-                try {
-                    responseCode
-                } finally {
-                    disconnect()
-                }
-            }
-        } catch (e: IOException) {
-            throw DriverCreationException("Cannot reach Selenium Grid at $statusUrl", e)
-        }
-
-        if (responseCode != HttpURLConnection.HTTP_OK) {
-            throw DriverCreationException("Selenium Grid unhealthy at $statusUrl (HTTP $responseCode)")
-        }
-        logger.debug("Selenium Grid is healthy")
-    }
-
+    // Retries only DriverCreationException: Grid connection and initialization failures, which are often transient
     private fun <T> executeWithRetry(operationName: String, operation: () -> T): T {
         var lastException: Exception? = null
 

@@ -18,7 +18,7 @@ UI and API test automation for the WebQA demo shop, written in Kotlin on TestNG,
 - **API**: one `ApiClient` base for all clients. It applies timeouts and logging, and every call is attached to Allure. The `Authorization` header is masked in logs and in Allure. The login call carries the password in and the token out, so only its URI and status are logged, and it is not attached.
 - **Mocks**: the same client can point at a WireMock container, which serves stateful scenarios, delays and rate limiting (`SignUpWireMockTest`).
 - **Petstore**: a client generated from `petstore-openapi.json` by OpenAPI Generator. Tests delete the pets they create. They target the public demo by default; `docker compose up -d --wait petstore` plus `PETSTORE_BASE_URL=http://localhost:8085/api/v3` runs them against a local copy.
-- **Config**: `application.conf` (Typesafe Config) with environment-variable overrides. A missing `TEST_USER_EMAIL` / `TEST_PASSWORD` fails the run immediately with a clear message.
+- **Config**: `application.conf` (Typesafe Config) with environment-variable overrides. A test that logs in fails at once with a clear message if `TEST_USER_EMAIL` / `TEST_PASSWORD` is missing; tests that do not log in (sign-up, Petstore, WireMock) run without them.
 - **Suites**: TestNG suites select tests by package and group (`smoke`, `wiremock`), not by class or method name, so a new or renamed test stays in its suites.
 
 Stack: Kotlin · Gradle · TestNG · Selenium 4 · REST Assured · WireMock · AssertJ · Allure · DataFaker · detekt.

@@ -2,7 +2,6 @@ package com.webqa.tests
 
 import com.webqa.core.config.Configuration
 import com.webqa.core.driver.BrowserCapabilities
-import com.webqa.core.driver.DriverOptions
 import com.webqa.core.driver.WebDriverFactory
 import io.qameta.allure.Allure
 import org.openqa.selenium.OutputType
@@ -21,8 +20,10 @@ import java.io.ByteArrayInputStream
 abstract class BaseTest {
     private val logger = LoggerFactory.getLogger(this::class.java)
     protected val baseUrl = Configuration.App.baseUrl
-    protected val userEmail = Configuration.App.userEmail
-    protected val userPass = Configuration.App.userPass
+
+    // Lazy: tests that never log in (e.g. sign-up) must not require credentials
+    protected val userEmail: String by lazy { Configuration.Credentials.userEmail }
+    protected val userPass: String by lazy { Configuration.Credentials.password }
 
     @Parameters("browser")
     @BeforeMethod(alwaysRun = true)
@@ -31,9 +32,7 @@ abstract class BaseTest {
         val browserCapabilities = BrowserCapabilities.fromString(browserName)
         logger.info("Initializing test with browser: {}", browserCapabilities.browserName)
 
-        val options = DriverOptions(headless = Configuration.headless)
-
-        WebDriverFactory.createDriver(browserCapabilities, options).also { driver ->
+        WebDriverFactory.createDriver(browserCapabilities, Configuration.headless).also { driver ->
             if (driver is RemoteWebDriver) {
                 logger.info(
                     "Started test on {} {}",

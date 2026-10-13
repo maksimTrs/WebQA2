@@ -1,6 +1,7 @@
 package com.webqa.tests.api.pets
 
-import com.webqa.tests.api.pets.data.PetTestDataFactory
+import com.webqa.core.api.clients.PetStoreClient
+import com.webqa.core.utils.PetTestDataFactory
 import com.webqa.tests.api.pets.verifier.PetVerifier
 import io.qameta.allure.Description
 import io.qameta.allure.Feature

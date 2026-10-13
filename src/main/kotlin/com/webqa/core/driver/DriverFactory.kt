@@ -9,19 +9,19 @@ import org.slf4j.LoggerFactory
 import java.net.URL
 
 interface DriverFactory {
-    fun createDriver(browser: BrowserCapabilities, options: DriverOptions): WebDriver
+    fun createDriver(browser: BrowserCapabilities, headless: Boolean): WebDriver
 }
 
 class LocalDriverFactory : DriverFactory {
     private val logger = LoggerFactory.getLogger(LocalDriverFactory::class.java)
 
     // Drivers are resolved by Selenium Manager (bundled with Selenium 4.6+)
-    override fun createDriver(browser: BrowserCapabilities, options: DriverOptions): WebDriver {
+    override fun createDriver(browser: BrowserCapabilities, headless: Boolean): WebDriver {
         logger.info("Creating local ${browser.browserName} driver")
 
         return when (browser) {
-            is BrowserCapabilities.Chrome -> ChromeDriver(browser.buildCapabilities(options))
-            is BrowserCapabilities.Firefox -> FirefoxDriver(browser.buildCapabilities(options))
+            is BrowserCapabilities.Chrome -> ChromeDriver(browser.buildCapabilities(headless))
+            is BrowserCapabilities.Firefox -> FirefoxDriver(browser.buildCapabilities(headless))
         }.also {
             logger.info("Local ${browser.browserName} driver created successfully")
         }
@@ -31,11 +31,11 @@ class LocalDriverFactory : DriverFactory {
 class RemoteDriverFactory(private val gridUrl: String) : DriverFactory {
     private val logger = LoggerFactory.getLogger(RemoteDriverFactory::class.java)
 
-    override fun createDriver(browser: BrowserCapabilities, options: DriverOptions): WebDriver {
+    override fun createDriver(browser: BrowserCapabilities, headless: Boolean): WebDriver {
         logger.info("Creating remote ${browser.browserName} driver at $gridUrl")
 
         return try {
-            RemoteWebDriver(URL(gridUrl), browser.buildCapabilities(options)).also {
+            RemoteWebDriver(URL(gridUrl), browser.buildCapabilities(headless)).also {
                 logger.info("Remote ${browser.browserName} driver created successfully")
             }
         } catch (e: WebDriverException) {
