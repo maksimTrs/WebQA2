@@ -25,7 +25,7 @@ Stack: Kotlin · Gradle · TestNG · Selenium 4 · REST Assured · WireMock · A
 
 ## Setup
 
-1. JDK 17.
+1. JDK 17 or newer to run Gradle. The tests are compiled and run on a JDK 17 toolchain, which Gradle downloads if the machine has none.
 2. Chrome or Firefox for local UI runs. Docker for Selenium Grid and WireMock.
 3. Credentials for the test stand:
    ```bash
@@ -100,6 +100,6 @@ Both tasks fail on any finding (`maxIssues: 0`). Reports are written to `build/r
 - **UI Tests**: `smoke-ui.xml` on Selenium Grid in Docker.
 - **Allure Report**: merges the results of both test jobs into one report, uploaded as an artifact. On `master` it is deployed to GitHub Pages.
 
-`.github/workflows/regression.yml` runs nightly and manually: every test once in Chrome on Grid, including WireMock and Petstore in local containers (`regression.xml` without the Firefox pass).
+`.github/workflows/regression.yml` runs `regression.xml` nightly and manually: UI tests in Chrome and Firefox on Grid, API tests including WireMock and Petstore in local containers.
 
-Credentials come from the `TEST_USER_EMAIL` and `TEST_PASSWORD` secrets. Pull requests from forks get no secrets, so they run only the lint. A newer push cancels the outdated run. Test and Grid reports are uploaded as artifacts when a job fails. Gradle runs through `gradle/actions/setup-gradle`, which caches dependencies and validates the wrapper jar.
+Credentials come from the `TEST_USER_EMAIL` and `TEST_PASSWORD` secrets. Pull requests from forks get no secrets, so they run only the lint. A newer push to a pull request cancels its outdated run; runs on `master` queue instead, so a Pages deployment is never cut off. Test and Grid reports are uploaded as artifacts when a job fails. Gradle runs through `gradle/actions/setup-gradle`, which caches dependencies and validates the wrapper jar.

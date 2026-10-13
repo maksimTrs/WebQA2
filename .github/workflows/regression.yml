@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   regression:
-    name: Regression (Chrome, API, WireMock)
+    name: Regression (Chrome, Firefox, API, WireMock)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
@@ -26,31 +26,30 @@ jobs:
 
       - name: Start Selenium Grid, WireMock and Petstore
         timeout-minutes: 3
-        run: docker compose up -d --wait selenium-hub chrome wiremock petstore
+        run: docker compose up -d --wait selenium-hub chrome firefox wiremock petstore
 
-      # No suite file: every test class runs once in the default browser (Chrome),
-      # i.e. regression.xml without its Firefox pass
+      # The only CI run of the Firefox pass and of the full suite file: keeps regression.xml from rotting
       - name: Run Regression
         env:
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
           # Local container instead of the public demo, which is shared and goes down
           PETSTORE_BASE_URL: http://localhost:8085/api/v3
-        run: ./gradlew test -Dremote=true
+        run: ./gradlew test -PsuiteFile=src/test/resources/regression.xml -Dremote=true
 
       - name: Publish Test Results
         uses: EnricoMi/publish-unit-test-result-action@d0a4676d0e0b938bc201470d88276b7c74c712b3  # v2.24.0
-        if: always()
+        if: ${{ !cancelled() }}
         with:
           files: build/test-results/test/**/*.xml
           check_name: Regression Test Results
 
       - name: Generate Allure Report
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./gradlew allureReport
 
       - name: Upload Allure Report
-        if: always()
+        if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v7
         with:
           name: allure-report-regression
