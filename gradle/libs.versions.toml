@@ -1,6 +1,6 @@
 [versions]
 # Pinned to the Kotlin detekt 1.23.8 is built with (its detekt-cli depends on kotlin-compiler-embeddable 2.0.21)
-kotlin = "2.0.21"
+kotlin = "2.4.21"
 allure = "2.35.5"
 # Allure commandline used by the Gradle plugin to build the HTML report
 allure-commandline = "2.46.1"
