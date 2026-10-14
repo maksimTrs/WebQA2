@@ -10,8 +10,12 @@ import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
 import io.restassured.response.Response
 import org.apache.http.HttpStatus.SC_OK
+import java.time.Duration
 
-class AuthApiClient(baseUrl: String = Configuration.Api.baseUrl) : ApiClient(baseUrl) {
+class AuthApiClient(
+    baseUrl: String = Configuration.Api.baseUrl,
+    timeout: Duration = Duration.ofSeconds(Configuration.Api.timeout.toLong())
+) : ApiClient(baseUrl, timeout) {
 
     companion object {
         private const val LOGIN_ENDPOINT = "/user/login"

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Test stand unavailable",
+    "description": "Connection errors, timeouts and 5xx answers: the stand or a container was down, not a defect",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": "(?s).*(Connection refused|Connect to .* failed|UnknownHostException|connect timed out|Read timed out|SocketTimeoutException|net::ERR_|but was <?50[234]).*"
+  },
+  {
+    "name": "Product defects",
+    "description": "An assertion failed: the application did not behave as the test expects",
+    "matchedStatuses": ["failed"]
+  },
+  {
+    "name": "Broken tests",
+    "description": "An unexpected exception (e.g. an element never appeared): check the test or the page before filing a bug",
+    "matchedStatuses": ["broken"]
+  }
+]

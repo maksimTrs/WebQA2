@@ -5,6 +5,8 @@ import com.webqa.core.utils.PetTestDataFactory
 import com.webqa.tests.api.pets.verifier.PetVerifier
 import io.qameta.allure.Description
 import io.qameta.allure.Feature
+import io.qameta.allure.Severity
+import io.qameta.allure.SeverityLevel
 import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
 import org.openapitools.client.apis.PetApi.StatusFindPetsByStatus
@@ -35,6 +37,7 @@ class PetApiTest {
 
     @Test
     @Story("Pet Management")
+    @Severity(SeverityLevel.CRITICAL)
     @Description("Add a new pet to the store")
     fun testAddNewPet() {
         val newPet = PetTestDataFactory.createTestPet()
@@ -45,6 +48,7 @@ class PetApiTest {
 
     @Test
     @Story("Pet Management")
+    @Severity(SeverityLevel.NORMAL)
     @Description("Update an existing pet")
     fun testUpdatePet() {
         val addedPet = addPet(PetTestDataFactory.createTestPet())
@@ -62,6 +66,7 @@ class PetApiTest {
 
     @Test
     @Story("Pet Search")
+    @Severity(SeverityLevel.NORMAL)
     @Description("Find pets by status 'pending'")
     fun testFindPetsByStatus() {
         val pendingPet = addPet(PetTestDataFactory.createTestPetWithStatus(Pet.Status.pending))
@@ -78,6 +83,7 @@ class PetApiTest {
 
     @Test
     @Story("Pet Search")
+    @Severity(SeverityLevel.CRITICAL)
     @Description("Find pet by ID")
     fun testGetPetById() {
         val addedPet = addPet(PetTestDataFactory.createTestPet())
@@ -88,6 +94,7 @@ class PetApiTest {
 
     @Test
     @Story("Pet Management")
+    @Severity(SeverityLevel.NORMAL)
     @Description("Delete a pet")
     fun testDeletePet() {
         // Tracked like the others: if the delete under test fails, @AfterClass still removes the pet

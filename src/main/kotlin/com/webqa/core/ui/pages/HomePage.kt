@@ -1,85 +1,75 @@
 package com.webqa.core.ui.pages
 
+import com.webqa.core.config.Configuration
 import com.webqa.core.ui.BasePage
+import io.qameta.allure.Step
 import org.openqa.selenium.By
-import org.openqa.selenium.TimeoutException
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.WebElement
-import org.openqa.selenium.support.FindBy
 import org.openqa.selenium.support.ui.ExpectedConditions
 
 class HomePage(driver: WebDriver) : BasePage(driver) {
-    @FindBy(css = "a[href='/login']")
-    private lateinit var loginButton: WebElement
+    private companion object {
+        val LOGIN_LINK: By = By.cssSelector("a[href='/login']")
+        val LOGGED_IN_USER_INFO: By = By.xpath("//div/a/following::h6[contains(text(), 'Welcome')]")
+        val PRODUCT_CARDS: By = By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item")
+        val ADD_TO_CART_BUTTON: By = By.cssSelector(".MuiButton-containedSecondary")
 
-    @FindBy(css = "a[href='/signup']")
-    private lateinit var signupButton: WebElement
+        // The app labels its cart "Chart"
+        val CART: By = By.xpath("//h6[text()='Chart']/../div/table")
+        val CART_QUANTITY_INPUT: By = By.xpath("//h6[text()='Chart']/../div/table//input")
+    }
 
-    @FindBy(xpath = "//div/a/following::h6[contains(text(), 'Welcome')]")
-    private lateinit var loggedInUserInfo: WebElement
+    @Step("Open the home page")
+    fun open(): HomePage {
+        driver.get(Configuration.App.baseUrl)
+        visible(LOGIN_LINK, "Login link")
+        return this
+    }
 
-    private fun getProductCards(): List<WebElement> =
-        wait.until(
-            ExpectedConditions.presenceOfAllElementsLocatedBy(
-                By.cssSelector(".MuiGrid-container.MuiGrid-spacing-xs-1 .MuiGrid-item")
-            )
+    @Step("Go to the login page")
+    fun clickLogin(): LoginPage {
+        click(LOGIN_LINK, "Login link")
+        return LoginPage(driver)
+    }
+
+    @Step("Wait until {expectedEmail} is shown as logged in")
+    fun waitForLoginComplete(expectedEmail: String): HomePage {
+        waitUntil(
+            "logged-in user '$expectedEmail' is not shown in the header",
+            ExpectedConditions.textToBePresentInElementLocated(LOGGED_IN_USER_INFO, expectedEmail)
         )
-
-    // The app labels its cart "Chart"
-    @FindBy(xpath = "//h6[text()='Chart']/../div/table")
-    private lateinit var cart: WebElement
-
-    @FindBy(xpath = "//h6[text()='Chart']/../div/table//input")
-    private lateinit var cartQuantityInput: WebElement
-
-    fun clickLogin() {
-        waitForElementToBeClickable(loginButton)
-        loginButton.click()
+        return this
     }
 
-    fun clickSignup() {
-        waitForElementToBeClickable(signupButton)
-        signupButton.click()
+    @Step("Read the logged-in user email")
+    fun getLoggedInUserEmail(): String =
+        // The email follows the "|" separator in the greeting
+        visible(LOGGED_IN_USER_INFO, "Logged-in user info").text.trim().substringAfter("|").trim()
+
+    @Step("Count the displayed products")
+    fun getProductsCount(): Int =
+        waitUntil("no product cards ($PRODUCT_CARDS)", ExpectedConditions.presenceOfAllElementsLocatedBy(PRODUCT_CARDS))
+            .size
+
+    @Step("Add product #{index} to the cart")
+    fun addProductToCart(index: Int): HomePage {
+        val cards = allVisible(PRODUCT_CARDS, "Product cards")
+        check(index in cards.indices) { "No product card #$index: ${cards.size} displayed" }
+        val button = cards[index].findElement(ADD_TO_CART_BUTTON)
+        waitUntil("'Add to cart' of product #$index is not clickable", ExpectedConditions.elementToBeClickable(button))
+            .click()
+        return this
     }
 
-    fun waitForLoginComplete(expectedEmail: String) {
-        wait.until(ExpectedConditions.textToBePresentInElement(loggedInUserInfo, expectedEmail))
-    }
-
-    fun getLoggedInUserEmail(): String {
-        waitForElement(loggedInUserInfo)
-        val text = loggedInUserInfo.text.trim()
-        // Extract email from text, assuming it's the last part after any separators
-        return text.substringAfter("|").trim()
-    }
-
-    fun getProductsCount(): Int {
-        waitForElement(loggedInUserInfo)
-        return getProductCards().size
-    }
-
-    fun addProductToCart(index: Int) {
-        val cards = getProductCards()
-        waitForElements(cards)
-
-        val addToCartButton = cards[index].findElement(By.cssSelector(".MuiButton-containedSecondary"))
-        waitForElementToBeClickable(addToCartButton)
-        addToCartButton.click()
-    }
-
-    @Suppress("SwallowedException") // timeout is the expected "no cart" outcome
-    fun isCartDisplayed(): Boolean {
-        return try {
-            waitForElement(cart)
-            true
-        } catch (e: TimeoutException) {
-            false
-        }
-    }
-
+    /** Waits for the cart to appear; fails with a timeout naming the cart if it does not. */
+    @Step("Read the cart quantity")
     fun getCartQuantity(): Int {
-        waitForElement(cart)
-        val value = checkNotNull(cartQuantityInput.getDomProperty("value")) { "Cart quantity input has no value" }
-        return value.toInt()
+        visible(CART, "Cart")
+        val input = waitUntil(
+            "Cart quantity input is missing ($CART_QUANTITY_INPUT)",
+            ExpectedConditions.presenceOfElementLocated(CART_QUANTITY_INPUT)
+        )
+        val value = input.getDomProperty("value")
+        return checkNotNull(value) { "Cart quantity input has no value" }.toInt()
     }
 }

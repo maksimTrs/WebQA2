@@ -7,7 +7,7 @@ config:
   warningsAsErrors: false
   checkExhaustiveness: false
 
-# This configuration specifically focuses on security-related rules
+# Stricter subset on top of detekt.yml: exception handling, potential bugs, nullability (not a security scan)
 complexity:
   active: true
 

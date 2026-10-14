@@ -2,75 +2,48 @@ package com.webqa.core.ui.pages
 
 import com.webqa.core.config.Configuration
 import com.webqa.core.ui.BasePage
-import org.openqa.selenium.TimeoutException
+import io.qameta.allure.Param
+import io.qameta.allure.Step
+import io.qameta.allure.model.Parameter
+import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.WebElement
-import org.openqa.selenium.support.FindBy
 import org.openqa.selenium.support.ui.ExpectedConditions
 
 class SignUpPage(driver: WebDriver) : BasePage(driver) {
-    companion object {
-        private val URL = "${Configuration.App.baseUrl}/signup"
+    private companion object {
+        val URL = "${Configuration.App.baseUrl}/signup"
+        val EMAIL_INPUT: By = By.id("email")
+        val PASSWORD_INPUT: By = By.id("password")
+        val CONFIRM_PASSWORD_INPUT: By = By.id("passwordConfirm")
+        val SIGN_UP_BUTTON: By = By.cssSelector("button[type='submit']")
     }
 
-    @FindBy(id = "email")
-    private lateinit var emailInput: WebElement
-
-    @FindBy(id = "password")
-    private lateinit var passwordInput: WebElement
-
-    @FindBy(id = "passwordConfirm")
-    private lateinit var confirmPasswordInput: WebElement
-
-    @FindBy(css = "button[type='submit']")
-    private lateinit var signUpButton: WebElement
-
-    fun open() {
+    @Step("Open the sign-up page")
+    fun open(): SignUpPage {
         driver.get(URL)
+        visible(EMAIL_INPUT, "Email input")
+        return this
     }
 
-    private fun enterEmail(email: String) {
-        waitForElement(emailInput)
-        emailInput.sendKeys(email)
+    @Step("Fill the sign-up form for {email}")
+    fun fillSignUpForm(email: String, @Param(mode = Parameter.Mode.MASKED) password: String): SignUpPage {
+        type(EMAIL_INPUT, "Email input", email)
+        type(PASSWORD_INPUT, "Password input", password)
+        type(CONFIRM_PASSWORD_INPUT, "Confirm password input", password)
+        return this
     }
 
-    private fun enterPassword(password: String) {
-        waitForElement(passwordInput)
-        passwordInput.sendKeys(password)
+    @Step("Check whether the sign-up button is enabled")
+    fun isSignUpButtonEnabled(): Boolean = visible(SIGN_UP_BUTTON, "Sign-up button").isEnabled
+
+    @Step("Submit the sign-up form")
+    fun clickSignUpButton(): SignUpPage {
+        click(SIGN_UP_BUTTON, "Sign-up button")
+        return this
     }
 
-    private fun enterConfirmPassword(password: String) {
-        waitForElement(confirmPasswordInput)
-        confirmPasswordInput.sendKeys(password)
-    }
-
-    fun isSignUpButtonEnabled(): Boolean {
-        waitForElement(signUpButton)
-        return signUpButton.isEnabled
-    }
-
-    fun clickSignUpButton() {
-        waitForElementToBeClickable(signUpButton)
-        signUpButton.click()
-    }
-
-    fun fillSignUpForm(email: String, password: String) {
-        enterEmail(email)
-        enterPassword(password)
-        enterConfirmPassword(password)
-    }
-
-    @Suppress("SwallowedException") // timeout is the expected "no alert" outcome
-    fun isAlertPresent(): Boolean {
-        return try {
-            wait.until(ExpectedConditions.alertIsPresent())
-            true
-        } catch (e: TimeoutException) {
-            false
-        }
-    }
-
-    fun getAlertText(): String {
-        return wait.until(ExpectedConditions.alertIsPresent()).text
-    }
+    /** Waits for the browser alert the app shows after sign-up; fails with a timeout if none appears. */
+    @Step("Read the sign-up result alert")
+    fun getAlertText(): String =
+        waitUntil("no alert after sign-up", ExpectedConditions.alertIsPresent()).text
 }

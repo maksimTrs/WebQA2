@@ -1,38 +1,25 @@
 package com.webqa.core.ui.pages
 
 import com.webqa.core.ui.BasePage
+import io.qameta.allure.Param
+import io.qameta.allure.Step
+import io.qameta.allure.model.Parameter
+import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
-import org.openqa.selenium.WebElement
-import org.openqa.selenium.support.FindBy
 
 class LoginPage(driver: WebDriver) : BasePage(driver) {
-    @FindBy(id = "email")
-    private lateinit var emailInput: WebElement
-
-    @FindBy(id = "password")
-    private lateinit var passwordInput: WebElement
-
-    @FindBy(css = "button[type='submit']")
-    private lateinit var loginButton: WebElement
-
-    fun enterEmail(email: String) {
-        waitForElement(emailInput)
-        emailInput.sendKeys(email)
+    private companion object {
+        val EMAIL_INPUT: By = By.id("email")
+        val PASSWORD_INPUT: By = By.id("password")
+        val LOGIN_BUTTON: By = By.cssSelector("button[type='submit']")
     }
 
-    fun enterPassword(password: String) {
-        waitForElement(passwordInput)
-        passwordInput.sendKeys(password)
-    }
-
-    fun clickLoginButton() {
-        waitForElementToBeClickable(loginButton)
-        loginButton.click()
-    }
-
-    fun login(email: String, password: String) {
-        enterEmail(email)
-        enterPassword(password)
-        clickLoginButton()
+    /** Submits the form; the caller waits for the outcome it expects (e.g. [HomePage.waitForLoginComplete]). */
+    @Step("Log in as {email}")
+    fun login(email: String, @Param(mode = Parameter.Mode.MASKED) password: String): HomePage {
+        type(EMAIL_INPUT, "Email input", email)
+        type(PASSWORD_INPUT, "Password input", password)
+        click(LOGIN_BUTTON, "Login button")
+        return HomePage(driver)
     }
 }

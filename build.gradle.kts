@@ -79,7 +79,15 @@ val dotEnv = rootProject.file(".env")
     }
     ?: emptyMap()
 
+// Allure reads categories.json from the results directory: it sorts failures into stand outages,
+// product defects and broken tests (config/allure/categories.json)
+val allureCategories by tasks.registering(Copy::class) {
+    from("config/allure/categories.json")
+    into(layout.buildDirectory.dir("allure-results"))
+}
+
 tasks.test {
+    dependsOn(allureCategories)
     useTestNG {
         useDefaultListeners = true
         if (project.hasProperty("suiteFile")) {
@@ -118,19 +126,19 @@ detekt {
     parallel = true
 }
 
-tasks.register<io.gitlab.arturbosch.detekt.Detekt>("detektSecurityCheck") {
-    description = "Run security focused detekt checks"
+tasks.register<io.gitlab.arturbosch.detekt.Detekt>("detektStrict") {
+    description = "Run the stricter detekt subset: exception handling, potential bugs, nullability"
     setSource(files("src/main/kotlin", "src/test/kotlin"))
-    config.setFrom(files("$projectDir/config/detekt/detekt-security.yml"))
+    config.setFrom(files("$projectDir/config/detekt/detekt-strict.yml"))
     // Separate file names: by default both detekt tasks write build/reports/detekt/detekt.*
     reports {
         html.required.set(true)
-        html.outputLocation.set(layout.buildDirectory.file("reports/detekt/security.html"))
+        html.outputLocation.set(layout.buildDirectory.file("reports/detekt/strict.html"))
         xml.required.set(true)
-        xml.outputLocation.set(layout.buildDirectory.file("reports/detekt/security.xml"))
+        xml.outputLocation.set(layout.buildDirectory.file("reports/detekt/strict.xml"))
         txt.required.set(false)
         sarif.required.set(true)
-        sarif.outputLocation.set(layout.buildDirectory.file("reports/detekt/security.sarif"))
+        sarif.outputLocation.set(layout.buildDirectory.file("reports/detekt/strict.sarif"))
         md.required.set(false)
     }
     include("**/*.kt")

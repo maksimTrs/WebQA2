@@ -6,15 +6,15 @@ import io.restassured.builder.RequestSpecBuilder
 import io.restassured.config.HttpClientConfig
 import io.restassured.config.LogConfig
 import io.restassured.config.RestAssuredConfig
-import io.restassured.filter.log.LogDetail
-import io.restassured.filter.log.RequestLoggingFilter
-import io.restassured.filter.log.ResponseLoggingFilter
 import io.restassured.http.ContentType
 import io.restassured.specification.RequestSpecification
 import java.time.Duration
 
-abstract class ApiClient(private val baseUrl: String = Configuration.Api.baseUrl) {
-    private val timeoutMs = Duration.ofSeconds(Configuration.Api.timeout.toLong()).toMillis().toInt()
+abstract class ApiClient(
+    private val baseUrl: String = Configuration.Api.baseUrl,
+    timeout: Duration = Duration.ofSeconds(Configuration.Api.timeout.toLong())
+) {
+    private val timeoutMs = timeout.toMillis().toInt()
 
     protected val requestSpec: RequestSpecification = buildSpec(sensitive = false)
 
@@ -35,17 +35,14 @@ abstract class ApiClient(private val baseUrl: String = Configuration.Api.baseUrl
                         .setParam("http.connection.timeout", timeoutMs)
                         .setParam("http.socket.timeout", timeoutMs)
                 )
-                // AllureRestAssured masks the headers listed here; RequestLoggingFilter ignores this list
+                // AllureRestAssured masks the headers listed here; ApiLoggingFilter gets them explicitly
                 .logConfig(LogConfig.logConfig().blacklistHeaders(SECRET_HEADERS))
         )
+        .addFilter(ApiLoggingFilter(sensitive, SECRET_HEADERS))
         .apply {
-            if (sensitive) {
-                addFilter(RequestLoggingFilter(LogDetail.URI))
-                addFilter(ResponseLoggingFilter(LogDetail.STATUS))
-            } else {
-                addFilter(RequestLoggingFilter(LogDetail.ALL, true, System.out, true, SECRET_HEADERS))
-                addFilter(ResponseLoggingFilter())
-                addFilter(AllureRestAssured())
+            if (!sensitive) {
+                // The stock template with secrets masked in the body and curl (src/main/resources/tpl)
+                addFilter(AllureRestAssured().setRequestTemplate("masked-http-request.ftl"))
             }
         }
         .build()
