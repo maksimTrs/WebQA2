@@ -8,6 +8,7 @@ import org.openqa.selenium.OutputType
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebDriverException
+import org.openqa.selenium.logging.LogType
 import org.openqa.selenium.remote.RemoteWebDriver
 import org.slf4j.LoggerFactory
 import org.testng.ITestResult
@@ -19,7 +20,6 @@ import java.io.ByteArrayInputStream
 
 abstract class BaseTest {
     private val logger = LoggerFactory.getLogger(this::class.java)
-    protected val baseUrl = Configuration.App.baseUrl
 
     // Lazy: tests that never log in (e.g. sign-up) must not require credentials
     protected val userEmail: String by lazy { Configuration.Credentials.userEmail }
@@ -45,23 +45,45 @@ abstract class BaseTest {
 
     @AfterMethod(alwaysRun = true)
     fun tearDown(result: ITestResult) {
-        if (result.status == ITestResult.FAILURE) {
-            try {
-                val screenshot = (getDriver() as TakesScreenshot).getScreenshotAs(OutputType.BYTES)
-                Allure.addAttachment(
-                    "Screenshot on failure",
-                    "image/png",
-                    ByteArrayInputStream(screenshot),
-                    "png"
-                )
-            } catch (e: WebDriverException) {
-                logger.error("Failed to attach screenshot", e)
+        try {
+            if (result.status == ITestResult.FAILURE) {
+                attachFailureArtifacts(getDriver())
             }
+        } finally {
+            WebDriverFactory.quitDriver()
         }
-        WebDriverFactory.quitDriver()
     }
 
     protected fun getDriver(): WebDriver {
         return WebDriverFactory.getDriver()
+    }
+
+    /** Each attachment on its own: a browser that cannot provide one (Firefox has no console log) keeps the rest. */
+    private fun attachFailureArtifacts(driver: WebDriver) {
+        attach("URL on failure") {
+            Allure.addAttachment("URL on failure", "text/uri-list", driver.currentUrl.orEmpty())
+        }
+        attach("Screenshot on failure") {
+            val screenshot = (driver as TakesScreenshot).getScreenshotAs(OutputType.BYTES)
+            Allure.addAttachment("Screenshot on failure", "image/png", ByteArrayInputStream(screenshot), "png")
+        }
+        attach("Page source on failure") {
+            Allure.addAttachment("Page source on failure", "text/html", driver.pageSource.orEmpty(), "html")
+        }
+        // Chrome only: BrowserCapabilities.Chrome enables goog:loggingPrefs
+        attach("Browser console on failure") {
+            val entries = driver.manage().logs().get(LogType.BROWSER).all
+            if (entries.isNotEmpty()) {
+                Allure.addAttachment("Browser console on failure", "text/plain", entries.joinToString("\n"), "log")
+            }
+        }
+    }
+
+    private fun attach(name: String, block: () -> Unit) {
+        try {
+            block()
+        } catch (e: WebDriverException) {
+            logger.warn("Could not attach '{}': {}", name, e.message)
+        }
     }
 }

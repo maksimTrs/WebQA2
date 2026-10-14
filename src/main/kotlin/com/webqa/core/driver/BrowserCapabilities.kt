@@ -3,6 +3,9 @@ package com.webqa.core.driver
 import org.openqa.selenium.MutableCapabilities
 import org.openqa.selenium.chrome.ChromeOptions
 import org.openqa.selenium.firefox.FirefoxOptions
+import org.openqa.selenium.logging.LogType
+import org.openqa.selenium.logging.LoggingPreferences
+import java.util.logging.Level
 
 sealed interface BrowserCapabilities {
     val browserName: String
@@ -24,6 +27,11 @@ sealed interface BrowserCapabilities {
                     "--no-sandbox",
                     "--disable-dev-shm-usage",
                     "--disable-blink-features=AutomationControlled"
+                )
+                // Console log for the failure attachments; Firefox (geckodriver) does not support the log endpoint
+                setCapability(
+                    ChromeOptions.LOGGING_PREFS,
+                    LoggingPreferences().apply { enable(LogType.BROWSER, Level.ALL) }
                 )
             }
         }
