@@ -1,41 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <timestamp key="timestamp" datePattern="yyyy-MM-dd'T'HH:mm:ss"/>
+    <!-- %X{test}: the running test, set by TestLogListener. No %highlight: ANSI codes end up in JUnit XML and CI logs -->
+    <property name="PATTERN" value="%d{HH:mm:ss.SSS} [%thread] %-5level [%X{test:-}] %logger{36} - %msg%n"/>
 
-    <!-- Console Appender -->
+    <!-- Console: INFO and up, one line per API call -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger{36} - %msg%n</pattern>
+            <pattern>${PATTERN}</pattern>
         </encoder>
     </appender>
 
-    <!-- Rolling File Appender -->
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- Create logs directory if it doesn't exist -->
-        <prudent>true</prudent>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- Daily rollover -->
-            <fileNamePattern>logs/test-%d{yyyy-MM-dd}.log</fileNamePattern>
-            <!-- Keep 7 days of history -->
-            <maxHistory>7</maxHistory>
-            <totalSizeCap>1GB</totalSizeCap>
-        </rollingPolicy>
+    <!-- File: everything, including DEBUG headers and bodies. Under build/ so CI can upload it; one file per run -->
+    <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+        <file>build/logs/test.log</file>
+        <append>false</append>
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level [%X{test:-}] %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- Logger for test execution -->
-    <logger name="com.webqa.tests.listeners.TestListener" level="INFO" additivity="false">
-        <appender-ref ref="CONSOLE"/>
-        <appender-ref ref="FILE"/>
-    </logger>
+    <!-- Per-test log attached to Allure by TestLogListener: INFO and up, the steps without the bodies -->
+    <appender name="TEST_LOG" class="com.webqa.tests.logging.TestLogAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>INFO</level>
+        </filter>
+        <pattern>%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n</pattern>
+    </appender>
 
-    <!-- Set logging levels -->
     <logger name="com.webqa" level="DEBUG"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
+        <appender-ref ref="TEST_LOG"/>
     </root>
 </configuration>

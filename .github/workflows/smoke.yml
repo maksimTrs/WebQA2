@@ -114,6 +114,7 @@ jobs:
           path: |
             build/reports
             build/test-results
+            build/logs
           retention-days: 5
 
   ui-tests:
@@ -170,6 +171,7 @@ jobs:
           path: |
             build/reports
             build/test-results
+            build/logs
           retention-days: 5
 
       - name: Selenium Grid Logs

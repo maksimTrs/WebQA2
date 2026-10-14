@@ -6,9 +6,6 @@ import io.restassured.builder.RequestSpecBuilder
 import io.restassured.config.HttpClientConfig
 import io.restassured.config.LogConfig
 import io.restassured.config.RestAssuredConfig
-import io.restassured.filter.log.LogDetail
-import io.restassured.filter.log.RequestLoggingFilter
-import io.restassured.filter.log.ResponseLoggingFilter
 import io.restassured.http.ContentType
 import io.restassured.specification.RequestSpecification
 import java.time.Duration
@@ -38,16 +35,12 @@ abstract class ApiClient(
                         .setParam("http.connection.timeout", timeoutMs)
                         .setParam("http.socket.timeout", timeoutMs)
                 )
-                // AllureRestAssured masks the headers listed here; RequestLoggingFilter ignores this list
+                // AllureRestAssured masks the headers listed here; ApiLoggingFilter gets them explicitly
                 .logConfig(LogConfig.logConfig().blacklistHeaders(SECRET_HEADERS))
         )
+        .addFilter(ApiLoggingFilter(sensitive, SECRET_HEADERS))
         .apply {
-            if (sensitive) {
-                addFilter(RequestLoggingFilter(LogDetail.URI))
-                addFilter(ResponseLoggingFilter(LogDetail.STATUS))
-            } else {
-                addFilter(RequestLoggingFilter(LogDetail.ALL, true, System.out, true, SECRET_HEADERS))
-                addFilter(ResponseLoggingFilter())
+            if (!sensitive) {
                 addFilter(AllureRestAssured())
             }
         }

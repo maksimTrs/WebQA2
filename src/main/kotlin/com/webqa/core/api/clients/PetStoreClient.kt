@@ -5,14 +5,23 @@ import io.qameta.allure.okhttp3.AllureOkHttp3
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import org.openapitools.client.apis.PetApi
+import org.slf4j.LoggerFactory
 import java.time.Duration
 
 /** Generated Petstore client over one shared OkHttpClient (one connection pool per run). */
 object PetStoreClient {
+    private val logger = LoggerFactory.getLogger(PetStoreClient::class.java)
     private val timeout: Duration = Duration.ofSeconds(Configuration.PetStore.timeout.toLong())
 
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.HEADERS })
+        // Through SLF4J, not OkHttp's default java.util.logging sink; the full exchange is in Allure (AllureOkHttp3)
+        .addInterceptor(
+            HttpLoggingInterceptor { logger.info(it) }.apply {
+                level = HttpLoggingInterceptor.Level.BASIC
+                redactHeader("Authorization")
+                redactHeader("api_key")
+            }
+        )
         .addInterceptor(AllureOkHttp3())
         .connectTimeout(timeout)
         .readTimeout(timeout)
