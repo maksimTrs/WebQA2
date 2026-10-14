@@ -2,9 +2,8 @@ package com.webqa.core.ui.pages
 
 import com.webqa.core.config.Configuration
 import com.webqa.core.ui.BasePage
-import io.qameta.allure.Param
+import io.qameta.allure.Allure
 import io.qameta.allure.Step
-import io.qameta.allure.model.Parameter
 import org.openqa.selenium.By
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.support.ui.ExpectedConditions
@@ -25,11 +24,16 @@ class SignUpPage(driver: WebDriver) : BasePage(driver) {
         return this
     }
 
-    @Step("Fill the sign-up form for {email}")
-    fun fillSignUpForm(email: String, @Param(mode = Parameter.Mode.MASKED) password: String): SignUpPage {
-        type(EMAIL_INPUT, "Email input", email)
-        type(PASSWORD_INPUT, "Password input", password)
-        type(CONFIRM_PASSWORD_INPUT, "Confirm password input", password)
+    // A lambda step keeps the password out of allure-results, as in LoginPage.login
+    fun fillSignUpForm(email: String, password: String): SignUpPage {
+        Allure.step(
+            "Fill the sign-up form for $email",
+            Allure.ThrowableRunnableVoid {
+                type(EMAIL_INPUT, "Email input", email)
+                type(PASSWORD_INPUT, "Password input", password)
+                type(CONFIRM_PASSWORD_INPUT, "Confirm password input", password)
+            }
+        )
         return this
     }
 

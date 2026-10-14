@@ -16,11 +16,7 @@ object PetStoreClient {
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
         // Through SLF4J, not OkHttp's default java.util.logging sink; the full exchange is in Allure (AllureOkHttp3)
         .addInterceptor(
-            HttpLoggingInterceptor { logger.info(it) }.apply {
-                level = HttpLoggingInterceptor.Level.BASIC
-                redactHeader("Authorization")
-                redactHeader("api_key")
-            }
+            HttpLoggingInterceptor { logger.info(it) }.apply { level = HttpLoggingInterceptor.Level.BASIC }
         )
         .addInterceptor(AllureOkHttp3())
         .connectTimeout(timeout)

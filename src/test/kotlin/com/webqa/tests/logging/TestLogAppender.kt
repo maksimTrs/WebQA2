@@ -2,14 +2,15 @@ package com.webqa.tests.logging
 
 import ch.qos.logback.classic.PatternLayout
 import ch.qos.logback.classic.spi.ILoggingEvent
-import ch.qos.logback.core.AppenderBase
+import ch.qos.logback.core.UnsynchronizedAppenderBase
 
 /**
  * Collects the log lines of the test running on the current thread, for [TestLogListener] to attach to Allure.
  * Per thread: with parallel="methods" each test runs its configuration and test methods on one worker thread.
- * Events from threads without an open capture are ignored.
+ * Events from threads without an open capture are ignored. Unsynchronized: the buffer is per thread,
+ * so parallel tests need no shared lock.
  */
-class TestLogAppender : AppenderBase<ILoggingEvent>() {
+class TestLogAppender : UnsynchronizedAppenderBase<ILoggingEvent>() {
     /** Set from logback-test.xml. */
     var pattern: String = "%d{HH:mm:ss.SSS} %-5level %logger{36} - %msg%n"
 
