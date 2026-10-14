@@ -13,8 +13,11 @@ import io.restassured.http.ContentType
 import io.restassured.specification.RequestSpecification
 import java.time.Duration
 
-abstract class ApiClient(private val baseUrl: String = Configuration.Api.baseUrl) {
-    private val timeoutMs = Duration.ofSeconds(Configuration.Api.timeout.toLong()).toMillis().toInt()
+abstract class ApiClient(
+    private val baseUrl: String = Configuration.Api.baseUrl,
+    timeout: Duration = Duration.ofSeconds(Configuration.Api.timeout.toLong())
+) {
+    private val timeoutMs = timeout.toMillis().toInt()
 
     protected val requestSpec: RequestSpecification = buildSpec(sensitive = false)
 

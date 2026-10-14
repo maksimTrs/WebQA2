@@ -7,6 +7,7 @@
         <groups>
             <run>
                 <exclude name="wiremock"/>
+                <exclude name="destructive"/>
             </run>
         </groups>
         <packages>

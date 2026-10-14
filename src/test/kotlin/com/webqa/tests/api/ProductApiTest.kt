@@ -17,27 +17,21 @@ import org.apache.http.HttpStatus.SC_BAD_REQUEST
 import org.apache.http.HttpStatus.SC_OK
 import org.assertj.core.api.Assertions.assertThat
 import org.assertj.core.api.SoftAssertions
-import org.testng.annotations.BeforeClass
 import org.testng.annotations.Test
 import java.math.BigDecimal
 
 @Feature("Product Catalog API")
 class ProductApiTest : BaseApiTest() {
-    private lateinit var authApiClient: AuthApiClient
-    private lateinit var productApiClient: ProductApiClient
-    private lateinit var authToken: String
+    private val productApiClient = ProductApiClient()
+
+    // Lazy, not @BeforeClass: a broken login fails each test with its cause instead of skipping the class.
+    // A failed initializer is retried on the next access, and the default lock makes parallel tests log in once
+    private val authToken: String by lazy { AuthApiClient().login(userEmail, userPassword) }
 
     companion object {
         private const val EXPECTED_SALE_PERCENTAGE = 0.1
         private const val ORDER_QUANTITY = 1
         private const val PAID_STATUS = "paid"
-    }
-
-    @BeforeClass(alwaysRun = true)
-    fun setup() {
-        authApiClient = AuthApiClient()
-        productApiClient = ProductApiClient()
-        authToken = authApiClient.login(userEmail, userPassword)
     }
 
     // The catalog on the shared stand changes over time: pick data from it instead of hardcoding ids and sums
@@ -74,7 +68,7 @@ class ProductApiTest : BaseApiTest() {
     }
 
     // Mutates the shared stand: each run buys one unit and the API offers no way to roll it back
-    @Test
+    @Test(groups = [TestGroups.DESTRUCTIVE])
     @Story("Order Management")
     @Severity(SeverityLevel.CRITICAL)
     @Description("Verify an order for a product in stock is created and paid")

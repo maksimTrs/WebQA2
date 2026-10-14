@@ -5,6 +5,7 @@ import com.webqa.core.api.models.CardDetails
 import com.webqa.core.api.models.OrderItem
 import com.webqa.core.api.models.OrderRequest
 import com.webqa.core.api.models.ProductResponse
+import com.webqa.core.config.Configuration
 import io.restassured.module.kotlin.extensions.Extract
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
@@ -12,14 +13,20 @@ import io.restassured.module.kotlin.extensions.When
 import io.restassured.response.Response
 import org.apache.http.HttpStatus.SC_OK
 
-class ProductApiClient : ApiClient() {
+class ProductApiClient(baseUrl: String = Configuration.Api.baseUrl) : ApiClient(baseUrl) {
+
+    companion object {
+        private const val PRODUCTS_ENDPOINT = "/product/"
+        private const val CREATE_ORDER_ENDPOINT = "/order/createAndPay"
+    }
+
     /** Happy-path helper: fails fast if the catalog is unavailable. */
     fun getProducts(authToken: String): ProductResponse {
         return Given {
             spec(requestSpec)
             header("Authorization", authToken)
         } When {
-            get("/product/")
+            get(PRODUCTS_ENDPOINT)
         } Then {
             statusCode(SC_OK)
         } Extract {
@@ -34,7 +41,7 @@ class ProductApiClient : ApiClient() {
             header("Authorization", authToken)
             body(OrderRequest(card, listOf(OrderItem(productId, quantity))))
         } When {
-            post("/order/createAndPay")
+            post(CREATE_ORDER_ENDPOINT)
         }
     }
 }

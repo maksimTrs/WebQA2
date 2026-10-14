@@ -16,10 +16,12 @@ object Configuration {
         val baseUrl: String = config.getString("app.baseUrl")
     }
 
-    // Not in App: reading App.baseUrl (e.g. the sign-up page) must not require credentials
+    // Not in App: reading App.baseUrl (e.g. the sign-up page) must not require credentials.
+    // Getters, not initialized vals: a missing secret then fails every read with its own message,
+    // instead of the first read only and NoClassDefFoundError for the rest
     object Credentials {
-        val userEmail: String = requiredSecret("credentials.userEmail", "TEST_USER_EMAIL")
-        val password: String = requiredSecret("credentials.password", "TEST_PASSWORD")
+        val userEmail: String get() = requiredSecret("credentials.userEmail", "TEST_USER_EMAIL")
+        val password: String get() = requiredSecret("credentials.password", "TEST_PASSWORD")
     }
 
     object Api {
@@ -29,6 +31,7 @@ object Configuration {
 
     object PetStore {
         val baseUrl: String = config.getString("petstore.baseUrl")
+        val timeout: Int = config.getInt("petstore.timeout")
     }
 
     object Mock {

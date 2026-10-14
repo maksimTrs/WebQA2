@@ -6,7 +6,9 @@ import com.webqa.core.api.models.SignUpResponse
 import com.webqa.core.utils.TestDataGenerator.generateEmail
 import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseApiTest
+import com.webqa.tests.ExpectedMessages
 import com.webqa.tests.TestGroups
+import io.qameta.allure.Description
 import io.qameta.allure.Feature
 import io.qameta.allure.Severity
 import io.qameta.allure.SeverityLevel
@@ -22,7 +24,6 @@ class SignUpApiTest : BaseApiTest() {
     private val signUpClient = AuthApiClient()
 
     companion object {
-        private const val SUCCESS_MESSAGE = "You have successfully registered"
         private const val PASSWORD_MISMATCH_MESSAGE = "Passwords do not match"
         private const val VALIDATION_ERROR_MESSAGE = "Field Validation Error"
         private const val VALID_PASSWORD = "secret123"
@@ -66,9 +67,10 @@ class SignUpApiTest : BaseApiTest() {
         )
     ).map { arrayOf<Any>(it) }.toTypedArray()
 
-    @Test(description = "Verify successful user registration", groups = [TestGroups.SMOKE])
+    @Test(groups = [TestGroups.SMOKE])
     @Story("Sign Up")
     @Severity(SeverityLevel.CRITICAL)
+    @Description("Verify successful user registration")
     fun testSuccessfulSignUp() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
@@ -78,12 +80,13 @@ class SignUpApiTest : BaseApiTest() {
         )
 
         val response = signUpClient.signup(request).extractWithStatus<SignUpResponse>(SC_OK)
-        assertThat(response.message).describedAs("registration message").isEqualTo(SUCCESS_MESSAGE)
+        assertThat(response.message).describedAs("registration message").isEqualTo(ExpectedMessages.SIGN_UP_SUCCESS)
     }
 
-    @Test(description = "Verify invalid signup data is rejected", dataProvider = "invalidSignUps")
+    @Test(dataProvider = "invalidSignUps")
     @Story("Sign Up Validation")
     @Severity(SeverityLevel.NORMAL)
+    @Description("Verify invalid signup data is rejected")
     fun testSignUpRejectsInvalidData(case: InvalidSignUp) {
         val response = signUpClient.signup(case.request).extractWithStatus<SignUpResponse>(SC_BAD_REQUEST)
         val error = checkNotNull(response.error) { "No error in the 400 response for: $case" }
@@ -94,9 +97,10 @@ class SignUpApiTest : BaseApiTest() {
             .containsExactlyInAnyOrderElementsOf(case.expectedFieldErrors)
     }
 
-    @Test(description = "Verify existing email validation")
+    @Test
     @Story("Sign Up Validation")
     @Severity(SeverityLevel.NORMAL)
+    @Description("Verify existing email validation")
     fun testSignUpWithExistingEmail() {
         val newPassword = generatePassword()
         val request = SignUpRequest(
