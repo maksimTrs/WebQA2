@@ -41,7 +41,8 @@ abstract class ApiClient(
         .addFilter(ApiLoggingFilter(sensitive, SECRET_HEADERS))
         .apply {
             if (!sensitive) {
-                addFilter(AllureRestAssured())
+                // The stock template with secrets masked in the body and curl (src/main/resources/tpl)
+                addFilter(AllureRestAssured().setRequestTemplate("masked-http-request.ftl"))
             }
         }
         .build()
