@@ -1,23 +1,14 @@
 name: 'Set up Java and Gradle'
 description: 'Sets up the JDK and Gradle: dependency caching and Gradle wrapper validation'
-inputs:
-  java-version:
-    description: 'Java version to set up'
-    required: false
-    default: '17'
-  distribution:
-    description: 'Java distribution to use'
-    required: false
-    default: 'temurin'
-
 runs:
   using: 'composite'
   steps:
     - name: Set up JDK
       uses: actions/setup-java@v6
       with:
-        java-version: ${{ inputs.java-version }}
-        distribution: ${{ inputs.distribution }}
+        # Matches the Gradle toolchain (build.gradle.kts), so Gradle downloads no second JDK
+        java-version: '17'
+        distribution: 'temurin'
 
     # Also validates gradle-wrapper.jar against the known checksums (validate-wrappers defaults to true)
     - name: Set up Gradle

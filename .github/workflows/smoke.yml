@@ -1,9 +1,12 @@
 name: Smoke Tests
 
+# Docs-only changes cannot break the tests: skip the run. master is not protected, so no required check waits for it
 on:
   push:
     branches: [ master ]
+    paths-ignore: [ '**.md', 'docs/**' ]
   pull_request:
+    paths-ignore: [ '**.md', 'docs/**' ]
   workflow_dispatch:
 
 # A newer push to the same PR cancels the outdated run. Runs on master are queued, not cancelled:
@@ -31,7 +34,7 @@ jobs:
         run: ./gradlew detekt detektStrict --continue
 
       - name: Upload Detekt Reports
-        if: ${{ !cancelled() }}
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: detekt-reports
@@ -39,7 +42,8 @@ jobs:
           retention-days: 5
 
   # The shared stand goes down at times. Checking it first turns an outage into one clear error instead of
-  # a page of failed tests; the test jobs are then skipped, so no report replaces the published one
+  # a page of failed tests; the test jobs are then skipped, so no report replaces the published one.
+  # Fork PRs get no secrets, so the tests would fail on missing credentials: skipping this job skips them too
   stand-check:
     name: Test Stand Check
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -68,13 +72,10 @@ jobs:
   api-tests:
     name: API Tests
     needs: stand-check
-    # Fork PRs get no secrets: the tests would fail on missing credentials, not on a defect
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
-      actions: read
       checks: write
       pull-requests: write  # test-result summary comment on the PR
     steps:
@@ -85,7 +86,6 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Run API Tests
-        id: run-api-tests
         env:
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}
@@ -107,7 +107,7 @@ jobs:
           retention-days: 5
 
       - name: Upload Test Reports
-        if: failure() && steps.run-api-tests.outcome != 'success'
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: api-test-reports
@@ -120,12 +120,10 @@ jobs:
   ui-tests:
     name: UI Tests
     needs: stand-check
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
       contents: read
-      actions: read
       checks: write
       pull-requests: write  # test-result summary comment on the PR
     steps:
@@ -141,7 +139,6 @@ jobs:
         run: docker compose up -d --wait selenium-hub chrome
 
       - name: Run UI Tests
-        id: run-ui-tests
         timeout-minutes: 20
         env:
           TEST_USER_EMAIL: ${{ secrets.TEST_USER_EMAIL }}
@@ -164,7 +161,7 @@ jobs:
           retention-days: 5
 
       - name: Upload Test Reports
-        if: failure() && steps.run-ui-tests.outcome != 'success'
+        if: failure()
         uses: actions/upload-artifact@v7
         with:
           name: ui-test-reports
