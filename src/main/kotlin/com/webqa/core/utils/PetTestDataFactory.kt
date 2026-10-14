@@ -1,6 +1,5 @@
 package com.webqa.core.utils
 
-import io.qameta.allure.Step
 import org.openapitools.client.models.Category
 import org.openapitools.client.models.Pet
 import org.openapitools.client.models.Tag
@@ -8,7 +7,6 @@ import java.util.concurrent.ThreadLocalRandom
 
 object PetTestDataFactory {
 
-    @Step("Create test pet with id: {id}")
     fun createTestPet(id: Long = randomId()): Pet {
         return Pet(
             id = id,
@@ -20,7 +18,6 @@ object PetTestDataFactory {
         )
     }
 
-    @Step("Create test pet with custom status: {status}")
     fun createTestPetWithStatus(
         status: Pet.Status,
         id: Long = randomId()

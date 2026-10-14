@@ -7,4 +7,7 @@ object TestGroups {
 
     /** Needs the WireMock container: excluded from suites that run without Docker. */
     const val WIREMOCK = "wiremock"
+
+    /** Changes shared stand data irreversibly (e.g. buys stock): runs only in regression.xml. */
+    const val DESTRUCTIVE = "destructive"
 }

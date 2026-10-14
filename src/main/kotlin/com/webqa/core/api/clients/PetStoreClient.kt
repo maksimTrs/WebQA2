@@ -9,9 +9,7 @@ import java.time.Duration
 
 /** Generated Petstore client over one shared OkHttpClient (one connection pool per run). */
 object PetStoreClient {
-    // Generous: the public demo is slow at times
-    private const val TIMEOUT_SECONDS = 30L
-    private val timeout: Duration = Duration.ofSeconds(TIMEOUT_SECONDS)
+    private val timeout: Duration = Duration.ofSeconds(Configuration.PetStore.timeout.toLong())
 
     private val httpClient: OkHttpClient = OkHttpClient.Builder()
         .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.HEADERS })

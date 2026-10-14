@@ -20,7 +20,7 @@
         </packages>
     </test>
 
-    <!-- API Tests, including WireMock -->
+    <!-- API Tests, including WireMock and destructive -->
     <test name="API Tests">
         <packages>
             <package name="com.webqa.tests.api"/>
