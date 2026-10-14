@@ -28,7 +28,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Run Detekt
-        run: ./gradlew detekt detektSecurityCheck --continue
+        run: ./gradlew detekt detektStrict --continue
 
       - name: Upload Detekt Reports
         if: ${{ !cancelled() }}
@@ -38,8 +38,36 @@ jobs:
           path: build/reports/detekt
           retention-days: 5
 
+  # The shared stand goes down at times. Checking it first turns an outage into one clear error instead of
+  # a page of failed tests; the test jobs are then skipped, so no report replaces the published one
+  stand-check:
+    name: Test Stand Check
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Check that the WebQA stand answers
+        env:
+          # Any answer below 500 means the server is up: the API root may well be 401 or 404
+          URLS: https://webqa.mercdev.com https://webqa.mercdev.com/api/v1/product/
+        run: |
+          for url in $URLS; do
+            for attempt in 1 2 3; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$url" || true)
+              if [ "$code" -ge 200 ] && [ "$code" -lt 500 ]; then
+                echo "$url: HTTP $code"
+                continue 2
+              fi
+              echo "$url: HTTP $code (attempt $attempt/3)"
+              sleep 10
+            done
+            echo "::error title=Test stand unavailable::$url answered HTTP $code three times; the tests were not run"
+            exit 1
+          done
+
   api-tests:
     name: API Tests
+    needs: stand-check
     # Fork PRs get no secrets: the tests would fail on missing credentials, not on a defect
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
@@ -90,6 +118,7 @@ jobs:
 
   ui-tests:
     name: UI Tests
+    needs: stand-check
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 30
