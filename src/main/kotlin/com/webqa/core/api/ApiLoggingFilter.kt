@@ -52,7 +52,8 @@ class ApiLoggingFilter(
         private const val MASK = "***"
         private const val MAX_BODY_CHARS = 4000
 
-        // "password": "x" in JSON and password=x in a data class toString(); also passwordConfirm, authToken
+        // "password": "x" in JSON and password=x in a data class toString(); also passwordConfirm, authToken.
+        // The Allure request template (resources/tpl/masked-http-request.ftl) applies the same rule: change both
         private val SECRET_FIELD = Regex(
             """("?\b(?:password\w*|\w*[Tt]oken)"?\s*[:=]\s*)("(?:[^"\\]|\\.)*"|[^,)}\s]+)""",
             RegexOption.IGNORE_CASE
