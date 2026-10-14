@@ -55,6 +55,15 @@ jobs:
           path: build/reports/allure-report/allureReport
           retention-days: 14
 
+      # Full run log with DEBUG headers and bodies; each test's own log is also attached in the Allure report
+      - name: Upload Test Logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: regression-test-logs
+          path: build/logs
+          retention-days: 14
+
       - name: Docker Logs
         if: failure()
         run: docker compose logs

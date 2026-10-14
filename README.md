@@ -18,6 +18,7 @@ UI and API test automation for the WebQA demo shop, written in Kotlin on TestNG,
 - **API**: one `ApiClient` base for all clients. It applies timeouts and logging, and every call is attached to Allure. The `Authorization` header is masked in logs and in Allure. The login call carries the password in and the token out, so only its URI and status are logged, and it is not attached.
 - **Mocks**: `ApiClientWireMockTest` points the clients at a WireMock container to test the framework itself where the live stand cannot: the request body and headers the clients send, that the models survive undeclared response fields and keep decimal prices exact, and that a slow response hits the client timeout instead of hanging the run.
 - **Petstore**: a client generated from `petstore-openapi.json` by OpenAPI Generator. Tests delete the pets they create. They target the public demo by default; `docker compose up -d --wait petstore` plus `PETSTORE_BASE_URL=http://localhost:8085/api/v3` runs them against a local copy.
+- **Logs**: everything goes through SLF4J/logback, REST Assured and the Petstore client included, with the running test's name on each line. The console shows INFO (one line per API call); `build/logs/test.log` has DEBUG too (headers, bodies); each test's own log is attached to its Allure result as *Test log*. Secrets stay out: the login call logs only method, URI and status, `Authorization` is masked, and JSON fields named like a password or token are masked in logged bodies.
 - **Config**: `application.conf` (Typesafe Config) with environment-variable overrides. A test that logs in fails at once with a clear message if `TEST_USER_EMAIL` / `TEST_PASSWORD` is missing; tests that do not log in (sign-up, Petstore, WireMock) run without them.
 - **Suites**: TestNG suites select tests by package and group (`smoke`, `wiremock`, `destructive`), not by class or method name, so a new or renamed test stays in its suites.
 - **Reports**: Allure sorts failures into categories (`config/allure/categories.json`): *Test stand unavailable* (connection errors, timeouts, 5xx), *Product defects* (an assertion failed) and *Broken tests* (any other exception).
@@ -94,7 +95,7 @@ The tests register their own stubs via the admin API, each matching a value uniq
 ./gradlew allureServe     # build and open the Allure report (allureReport only builds it)
 ```
 
-Raw results are written to `build/allure-results`, JUnit XML to `build/test-results/test`. CI publishes the report of the latest `master` run, with trends, to [GitHub Pages](https://maksimtrs.github.io/WebQA/).
+Raw results are written to `build/allure-results`, JUnit XML to `build/test-results/test`, the full log to `build/logs/test.log`. CI publishes the report of the latest `master` run, with trends, to [GitHub Pages](https://maksimtrs.github.io/WebQA/).
 
 ## Static analysis
 
@@ -116,6 +117,6 @@ Both tasks fail on any finding (`maxIssues: 0`). Reports are written to `build/r
 
 `.github/workflows/regression.yml` runs `regression.xml` on manual dispatch only (the shared stand is too unstable for a schedule): UI tests in Chrome and Firefox on Grid, API tests including WireMock and Petstore in local containers.
 
-Credentials come from the `TEST_USER_EMAIL` and `TEST_PASSWORD` secrets. Pull requests from forks get no secrets, so they run only the lint. A newer push to a pull request cancels its outdated run; runs on `master` queue instead, so a Pages deployment is never cut off. Test and Grid reports are uploaded as artifacts when a job fails. Gradle runs through `gradle/actions/setup-gradle`, which caches dependencies and validates the wrapper jar.
+Credentials come from the `TEST_USER_EMAIL` and `TEST_PASSWORD` secrets. Pull requests from forks get no secrets, so they run only the lint. A newer push to a pull request cancels its outdated run; runs on `master` queue instead, so a Pages deployment is never cut off. Test reports, logs and Grid logs are uploaded as artifacts when a job fails. Gradle runs through `gradle/actions/setup-gradle`, which caches dependencies and validates the wrapper jar.
 
 Dependabot (`.github/dependabot.yml`) proposes weekly updates of the version catalog, the pinned actions and the Docker images: one grouped pull request per ecosystem for minor and patch versions, majors one by one.
