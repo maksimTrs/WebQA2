@@ -1,6 +1,7 @@
 package com.webqa.tests.api.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.matchingJsonPath
 import com.github.tomakehurst.wiremock.client.WireMock.post
 import com.github.tomakehurst.wiremock.client.WireMock.stubFor
@@ -9,15 +10,18 @@ import org.slf4j.LoggerFactory
 import org.testng.annotations.AfterClass
 import org.testng.annotations.BeforeClass
 
+/**
+ * Lifecycle and stubs for tests against the WireMock container.
+ * Every stub matches a value unique to its test (email, token): a leftover stub never answers another test.
+ */
 interface WireMockTestExtension {
     companion object {
         private val logger = LoggerFactory.getLogger(WireMockTestExtension::class.java)
-        private const val SCENARIO_STATE_EMAIL_CHANGED = "email-changed"
-        private const val SCENARIO_STATE_STARTED = "Started"
-        private const val SIGNUP_ENDPOINT = "/user/signup"
+        const val SIGNUP_ENDPOINT = "/user/signup"
+        const val PRODUCTS_ENDPOINT = "/product/"
     }
 
-    // Reset before, not only after: an interrupted run leaves stubs and scenario states in the long-lived container
+    // Reset before, not only after: an interrupted run leaves stubs in the long-lived container
     @BeforeClass(alwaysRun = true)
     fun setupWireMock() {
         WireMockSupport.configureClient()
@@ -30,63 +34,22 @@ interface WireMockTestExtension {
         WireMockSupport.resetMappings()
     }
 
-    fun stubSignUpWithScenario(email: String) {
-        logger.info("Stubbing signup scenario for email: {}", email)
-        // Scenario per email and an email matcher on every stub: a leftover stub must not answer another test's request
-        val scenario = "signup-retry-$email"
-        // First attempt - email already exists
-        stubFor(
-            post(urlEqualTo(SIGNUP_ENDPOINT))
-                .inScenario(scenario)
-                .whenScenarioStateIs(SCENARIO_STATE_STARTED)
-                .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(WireMockResponses.emailExists(email))
-                .willSetStateTo(SCENARIO_STATE_EMAIL_CHANGED)
-        )
-
-        // Second attempt with the same email - success
-        stubFor(
-            post(urlEqualTo(SIGNUP_ENDPOINT))
-                .inScenario(scenario)
-                .whenScenarioStateIs(SCENARIO_STATE_EMAIL_CHANGED)
-                .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(WireMockResponses.success())
-        )
-        logger.info("Signup scenario stubbed: first attempt will fail, second will succeed")
-    }
-
-    fun stubSignUpWithDelay(email: String, delayMs: Long) {
-        logger.info("Stubbing signup with {}ms delay for email: {}", delayMs, email)
+    fun stubSignUp(email: String, delayMs: Int = 0) {
+        logger.info("Stubbing signup for {} with {}ms delay", email, delayMs)
         stubFor(
             post(urlEqualTo(SIGNUP_ENDPOINT))
                 .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(WireMockResponses.success().withFixedDelay(delayMs.toInt()))
+                .willReturn(WireMockResponses.signUpSuccess().withFixedDelay(delayMs))
         )
     }
 
-    fun stubSignUpWithRateLimiting(email: String) {
-        logger.info("Stubbing rate-limited signup for email: {}", email)
-        val scenario = "rate-limiting-$email"
-        // Initial state - allow the request
+    /** Answers only a request carrying [authToken]: without the header the client gets WireMock's 404. */
+    fun stubProducts(authToken: String, productId: String, price: String) {
+        logger.info("Stubbing products for product {}", productId)
         stubFor(
-            post(urlEqualTo(SIGNUP_ENDPOINT))
-                .inScenario(scenario)
-                .whenScenarioStateIs(SCENARIO_STATE_STARTED)
-                .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(WireMockResponses.success())
-                .willSetStateTo("rate-limited")
-        )
-
-        // Rate limited state - reject subsequent requests
-        stubFor(
-            post(urlEqualTo(SIGNUP_ENDPOINT))
-                .inScenario(scenario)
-                .whenScenarioStateIs("rate-limited")
-                .withRequestBody(matchingJsonPath("$.email", equalTo(email)))
-                .willReturn(WireMockResponses.rateLimited())
-        )
-        logger.info(
-            "Rate limiting scenario stubbed: first request will succeed, subsequent requests will be rate limited"
+            get(urlEqualTo(PRODUCTS_ENDPOINT))
+                .withHeader("Authorization", equalTo(authToken))
+                .willReturn(WireMockResponses.productsWithUnknownFields(productId, price))
         )
     }
 }
