@@ -20,8 +20,10 @@ abstract class BasePage(protected val driver: WebDriver) {
     // Private: withMessage() mutates the wait, so every wait goes through waitUntil() and sets its own message
     private val wait = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
 
-    protected fun <T : Any> waitUntil(failureMessage: String, condition: ExpectedCondition<T>): T =
-        wait.withMessage(failureMessage).until(condition)
+    // Selenium declares condition results @Nullable; until() returns only a non-null, non-false value
+    // (it throws TimeoutException otherwise), so the result is non-null for callers
+    protected fun <T : Any> waitUntil(failureMessage: String, condition: ExpectedCondition<out T?>): T =
+        checkNotNull(wait.withMessage(failureMessage).until(condition)) { failureMessage }
 
     protected fun visible(locator: By, name: String): WebElement =
         waitUntil("$name is not visible ($locator)", ExpectedConditions.visibilityOfElementLocated(locator))
