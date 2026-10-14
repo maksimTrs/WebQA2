@@ -2,12 +2,9 @@
 <#-- @ftlvariable name="data" type="io.qameta.allure.attachment.http.HttpRequestAttachment" -->
 <#--
   allure-attachments 2.35.5 tpl/http-request.ftl with secrets masked in the body and the curl command
-  (e.g. the sign-up password). Same rule as ApiLoggingFilter.SECRET_FIELD: change both together.
-  Used by ApiClient through AllureRestAssured.setRequestTemplate().
+  (e.g. the sign-up password). Used by ApiClient through AllureRestAssured.setRequestTemplate().
 -->
-<#function mask text>
-    <#return text?replace(r'("?\b(?:password\w*|\w*token)"?\s*[:=]\s*)("(?:[^"\\]|\\.)*"|[^,)}\s]+)', '$1"***"', 'ri')>
-</#function>
+<#include "mask.ftl">
 <div><#if data.method??>${data.method}<#else>GET</#if> to <#if data.url??>${data.url}<#else>Unknown</#if></div>
 
 <#if data.body??>

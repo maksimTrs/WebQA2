@@ -3,13 +3,13 @@
     <test name="Chrome Tests">
         <parameter name="browser" value="chrome"/>
         <packages>
-            <package name="com.webqa.tests.ui"/>
+            <package name="com.webqa.tests.ui.*"/>
         </packages>
     </test>
     <test name="Firefox Tests">
         <parameter name="browser" value="firefox"/>
         <packages>
-            <package name="com.webqa.tests.ui"/>
+            <package name="com.webqa.tests.ui.*"/>
         </packages>
     </test>
 </suite>

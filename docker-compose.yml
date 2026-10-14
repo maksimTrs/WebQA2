@@ -48,9 +48,6 @@ services:
     ports:
       # Container keeps the image default 8080: the image's built-in healthcheck probes that port
       - "127.0.0.1:${WIREMOCK_PORT:-9999}:8080"
-    volumes:
-      - ./wiremock/mappings:/home/wiremock/mappings
-      - ./wiremock/files:/home/wiremock/__files
     environment:
       - WIREMOCK_OPTIONS=--verbose --global-response-templating --local-response-templating
 

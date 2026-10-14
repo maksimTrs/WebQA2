@@ -1,6 +1,5 @@
 package com.webqa.core.api
 
-import com.webqa.core.config.Configuration
 import io.qameta.allure.restassured.AllureRestAssured
 import io.restassured.builder.RequestSpecBuilder
 import io.restassured.config.HttpClientConfig
@@ -10,10 +9,7 @@ import io.restassured.http.ContentType
 import io.restassured.specification.RequestSpecification
 import java.time.Duration
 
-abstract class ApiClient(
-    private val baseUrl: String = Configuration.Api.baseUrl,
-    timeout: Duration = Duration.ofSeconds(Configuration.Api.timeout.toLong())
-) {
+abstract class ApiClient(private val baseUrl: String, timeout: Duration) {
     private val timeoutMs = timeout.toMillis().toInt()
 
     protected val requestSpec: RequestSpecification = buildSpec(sensitive = false)
@@ -41,8 +37,12 @@ abstract class ApiClient(
         .addFilter(ApiLoggingFilter(sensitive, SECRET_HEADERS))
         .apply {
             if (!sensitive) {
-                // The stock template with secrets masked in the body and curl (src/main/resources/tpl)
-                addFilter(AllureRestAssured().setRequestTemplate("masked-http-request.ftl"))
+                // The stock templates with secrets masked in the bodies and curl (src/main/resources/tpl)
+                addFilter(
+                    AllureRestAssured()
+                        .setRequestTemplate("masked-http-request.ftl")
+                        .setResponseTemplate("masked-http-response.ftl")
+                )
             }
         }
         .build()

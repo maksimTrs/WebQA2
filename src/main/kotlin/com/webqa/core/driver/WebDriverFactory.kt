@@ -18,12 +18,14 @@ object WebDriverFactory {
     private val WINDOW_SIZE = Dimension(WINDOW_WIDTH, WINDOW_HEIGHT)
     private val PAGE_TIMEOUT: Duration = Duration.ofSeconds(PAGE_TIMEOUT_SECONDS)
 
-    private val isRemote: Boolean get() = Configuration.remote
+    private val isRemote: Boolean get() = Configuration.WebDriver.remote
 
     private val localFactory by lazy { LocalDriverFactory() }
-    private val remoteFactory by lazy { RemoteDriverFactory(Configuration.gridUrl) }
+    private val remoteFactory by lazy { RemoteDriverFactory(Configuration.WebDriver.gridUrl) }
 
-    fun createDriver(browser: BrowserCapabilities, headless: Boolean): WebDriver {
+    /** Creates the driver and registers it in [DriverSession]; mode and headless come from the configuration. */
+    fun createDriver(browser: BrowserCapabilities): WebDriver {
+        val headless = Configuration.WebDriver.headless
         logger.info(
             "Creating ${browser.browserName} driver " +
                 "(mode: ${if (isRemote) "remote" else "local"}, headless: $headless)"
@@ -40,9 +42,6 @@ object WebDriverFactory {
             driver
         }
     }
-
-    fun getDriver(): WebDriver = DriverSession.get()
-    fun quitDriver() = DriverSession.quit()
 
     private fun initializeDriver(driver: WebDriver) {
         try {

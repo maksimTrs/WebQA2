@@ -2,6 +2,8 @@ package com.webqa.tests.api.pets
 
 import com.webqa.core.api.clients.PetStoreClient
 import com.webqa.core.utils.PetTestDataFactory
+import com.webqa.petstore.apis.PetApi.StatusFindPetsByStatus
+import com.webqa.petstore.models.Pet
 import com.webqa.tests.api.pets.verifier.PetVerifier
 import io.qameta.allure.Description
 import io.qameta.allure.Feature
@@ -9,8 +11,6 @@ import io.qameta.allure.Severity
 import io.qameta.allure.SeverityLevel
 import io.qameta.allure.Story
 import org.assertj.core.api.Assertions.assertThat
-import org.openapitools.client.apis.PetApi.StatusFindPetsByStatus
-import org.openapitools.client.models.Pet
 import org.slf4j.LoggerFactory
 import org.testng.annotations.AfterClass
 import org.testng.annotations.Test

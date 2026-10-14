@@ -3,7 +3,7 @@
     "name": "Test stand unavailable",
     "description": "Connection errors, timeouts and 5xx answers: the stand or a container was down, not a defect",
     "matchedStatuses": ["failed", "broken"],
-    "messageRegex": "(?s).*(Connection refused|Connect to .* failed|UnknownHostException|connect timed out|Read timed out|SocketTimeoutException|net::ERR_|but was <?50[234]).*"
+    "messageRegex": "(?s)(java\\.net\\.SocketTimeoutException.*|.*(Connection refused|Connect to .* failed|UnknownHostException|connect timed out|Read timed out|net::ERR_|but was <?50[234]).*)"
   },
   {
     "name": "Product defects",

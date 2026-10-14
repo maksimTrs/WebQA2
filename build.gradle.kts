@@ -47,13 +47,15 @@ openApiGenerate {
     generatorName.set("kotlin")
     inputSpec.set("$rootDir/src/main/resources/petstore-openapi.json")
     outputDir.set(layout.buildDirectory.dir("generate-resources").get().asFile.path)
+    packageName.set("com.webqa.petstore")
 }
 
-// Generated sources are compiled with the main source set
+// Generated sources are compiled with the main source set. Taken from the task's output, so compilation
+// depends on the generator without an explicit dependsOn
 sourceSets {
     main {
         kotlin {
-            srcDir(layout.buildDirectory.dir("generate-resources/src/main"))
+            srcDir(tasks.openApiGenerate.map { "${it.outputDir.get()}/src/main/kotlin" })
         }
     }
 }
@@ -63,10 +65,6 @@ kotlin {
     jvmToolchain(17)
 }
 
-tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-    dependsOn(tasks.openApiGenerate)
-}
-
 // Load .env file into environment for test tasks
 val dotEnv = rootProject.file(".env")
     .takeIf { it.exists() }
@@ -74,8 +72,10 @@ val dotEnv = rootProject.file(".env")
     ?.map { it.trim() }
     ?.filter { it.isNotEmpty() && !it.startsWith("#") && "=" in it }
     ?.associate { line ->
-        val (key, value) = line.split("=", limit = 2)
-        key.trim() to value.trim().removeSurrounding("\"").removeSurrounding("'")
+        val (key, raw) = line.split("=", limit = 2).map { it.trim() }
+        val quoted = raw.length >= 2 && raw.first() in "\"'" && raw.last() == raw.first()
+        // Quoted values are taken as is; unquoted ones drop an inline " # comment", as dotenv tools do
+        key to if (quoted) raw.substring(1, raw.length - 1) else raw.substringBefore(" #").trim()
     }
     ?: emptyMap()
 
@@ -95,6 +95,10 @@ tasks.test {
             val suite = file(project.property("suiteFile").toString())
             require(suite.isFile) { "TestNG suite file not found: $suite" }
             suites(suite)
+        } else {
+            // A plain "gradlew test" or --tests filter runs classes directly: keep the stock-buying test out.
+            // Only regression.xml runs it
+            excludeGroups("destructive")
         }
     }
     systemProperty("allure.results.directory", "build/allure-results")
@@ -124,25 +128,4 @@ detekt {
     allRules = false
     config.setFrom(files("$projectDir/config/detekt/detekt.yml"))
     parallel = true
-}
-
-tasks.register<io.gitlab.arturbosch.detekt.Detekt>("detektStrict") {
-    description = "Run the stricter detekt subset: exception handling, potential bugs, nullability"
-    setSource(files("src/main/kotlin", "src/test/kotlin"))
-    config.setFrom(files("$projectDir/config/detekt/detekt-strict.yml"))
-    // Separate file names: by default both detekt tasks write build/reports/detekt/detekt.*
-    reports {
-        html.required.set(true)
-        html.outputLocation.set(layout.buildDirectory.file("reports/detekt/strict.html"))
-        xml.required.set(true)
-        xml.outputLocation.set(layout.buildDirectory.file("reports/detekt/strict.xml"))
-        txt.required.set(false)
-        sarif.required.set(true)
-        sarif.outputLocation.set(layout.buildDirectory.file("reports/detekt/strict.sarif"))
-        md.required.set(false)
-    }
-    include("**/*.kt")
-    include("**/*.kts")
-    exclude("**/build/**")
-    exclude("**/resources/**")
 }

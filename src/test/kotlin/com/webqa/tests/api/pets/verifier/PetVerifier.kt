@@ -1,11 +1,11 @@
 package com.webqa.tests.api.pets.verifier
 
+import com.webqa.petstore.apis.PetApi
+import com.webqa.petstore.infrastructure.ClientException
+import com.webqa.petstore.models.Pet
 import io.qameta.allure.Step
 import org.assertj.core.api.Assertions.assertThatThrownBy
 import org.assertj.core.api.SoftAssertions
-import org.openapitools.client.apis.PetApi
-import org.openapitools.client.infrastructure.ClientException
-import org.openapitools.client.models.Pet
 
 class PetVerifier(private val petApi: PetApi) {
 

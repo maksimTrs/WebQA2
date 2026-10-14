@@ -4,7 +4,7 @@
     <test name="Chrome UI Tests">
         <parameter name="browser" value="chrome"/>
         <packages>
-            <package name="com.webqa.tests.ui"/>
+            <package name="com.webqa.tests.ui.*"/>
         </packages>
     </test>
 
@@ -12,15 +12,14 @@
     <test name="Firefox UI Tests">
         <parameter name="browser" value="firefox"/>
         <packages>
-            <package name="com.webqa.tests.ui"/>
+            <package name="com.webqa.tests.ui.*"/>
         </packages>
     </test>
 
     <!-- API Tests, including WireMock and destructive -->
     <test name="API Tests">
         <packages>
-            <package name="com.webqa.tests.api"/>
-            <package name="com.webqa.tests.api.pets"/>
+            <package name="com.webqa.tests.api.*"/>
         </packages>
     </test>
 </suite>

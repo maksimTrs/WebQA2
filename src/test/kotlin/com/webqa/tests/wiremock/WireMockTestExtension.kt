@@ -1,4 +1,4 @@
-package com.webqa.tests.api.wiremock
+package com.webqa.tests.wiremock
 
 import com.github.tomakehurst.wiremock.client.WireMock.equalTo
 import com.github.tomakehurst.wiremock.client.WireMock.get

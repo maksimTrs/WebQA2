@@ -8,9 +8,8 @@
             </run>
         </groups>
         <packages>
-            <package name="com.webqa.tests.api"/>
-            <package name="com.webqa.tests.api.pets"/>
-            <package name="com.webqa.tests.ui"/>
+            <package name="com.webqa.tests.api.*"/>
+            <package name="com.webqa.tests.ui.*"/>
         </packages>
     </test>
 </suite>

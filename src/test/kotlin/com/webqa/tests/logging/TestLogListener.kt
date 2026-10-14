@@ -26,10 +26,10 @@ class TestLogListener : IInvokedMethodListener {
             TestLogAppender.end()?.takeIf { it.isNotBlank() }?.let {
                 Allure.addAttachment("Test log", "text/plain", it, "log")
             }
-        } else if (method.testMethod.isBeforeMethodConfiguration && testResult.status == ITestResult.FAILURE) {
-            // The test is skipped and Allure has already closed the fixture, so there is nothing to attach to:
-            // the lines stay in build/logs/test.log under this method's name. Dropping the capture keeps
-            // the next test on this thread from inheriting them
+        } else if (method.testMethod.isBeforeMethodConfiguration && testResult.status != ITestResult.SUCCESS) {
+            // Failed or skipped: the test is skipped and Allure has already closed the fixture, so there is
+            // nothing to attach to: the lines stay in build/logs/test.log under this method's name.
+            // Dropping the capture keeps the next test on this thread from inheriting them
             TestLogAppender.end()
         }
         MDC.remove(MDC_KEY)

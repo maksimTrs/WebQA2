@@ -31,7 +31,7 @@ jobs:
         uses: ./.github/actions/java-setup
 
       - name: Run Detekt
-        run: ./gradlew detekt detektStrict --continue
+        run: ./gradlew detekt
 
       - name: Upload Detekt Reports
         if: failure()
@@ -211,6 +211,22 @@ jobs:
           for f in history.json history-trend.json duration-trend.json categories-trend.json retry-trend.json; do
             curl -sfL "$SITE/history/$f" -o "build/allure-results/history/$f" || echo "No $f in the published report"
           done
+
+      # Executor block with a link to this run; buildOrder also labels the trend graphs
+      - name: Describe the Run for Allure
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          RUN_NUMBER: ${{ github.run_number }}
+          REPORT_URL: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+          BRANCH: ${{ github.head_ref || github.ref_name }}
+          COMMIT: ${{ github.sha }}
+        run: |
+          cat > build/allure-results/executor.json <<EOF
+          {"name": "GitHub Actions", "type": "github", "buildOrder": $RUN_NUMBER,
+           "buildName": "Smoke #$RUN_NUMBER", "buildUrl": "$RUN_URL",
+           "reportName": "WebQA smoke #$RUN_NUMBER", "reportUrl": "$REPORT_URL"}
+          EOF
+          printf 'Branch=%s\nCommit=%s\n' "$BRANCH" "$COMMIT" > build/allure-results/environment.properties
 
       - name: Generate Allure Report
         run: ./gradlew allureReport

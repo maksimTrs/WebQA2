@@ -1,8 +1,8 @@
 package com.webqa.core.utils
 
-import org.openapitools.client.models.Category
-import org.openapitools.client.models.Pet
-import org.openapitools.client.models.Tag
+import com.webqa.petstore.models.Category
+import com.webqa.petstore.models.Pet
+import com.webqa.petstore.models.Tag
 import java.util.concurrent.ThreadLocalRandom
 
 object PetTestDataFactory {

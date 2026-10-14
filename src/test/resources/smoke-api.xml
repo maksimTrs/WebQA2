@@ -7,7 +7,7 @@
             </run>
         </groups>
         <packages>
-            <package name="com.webqa.tests.api"/>
+            <package name="com.webqa.tests.api.*"/>
         </packages>
     </test>
 </suite>

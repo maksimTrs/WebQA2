@@ -2,6 +2,8 @@ package com.webqa.core.ui
 
 import com.webqa.core.config.Configuration
 import org.openqa.selenium.By
+import org.openqa.selenium.ElementClickInterceptedException
+import org.openqa.selenium.StaleElementReferenceException
 import org.openqa.selenium.WebDriver
 import org.openqa.selenium.WebElement
 import org.openqa.selenium.support.ui.ExpectedCondition
@@ -17,8 +19,10 @@ import java.time.Duration
  * reports its cause instead of "expected true but was false".
  */
 abstract class BasePage(protected val driver: WebDriver) {
-    // Private: withMessage() mutates the wait, so every wait goes through waitUntil() and sets its own message
-    private val wait = WebDriverWait(driver, Duration.ofSeconds(Configuration.timeout.toLong()))
+    // Private: withMessage() mutates the wait, so every wait goes through waitUntil() and sets its own message.
+    // A re-render or an overlay (MUI backdrop, snackbar) caught between two polls only delays the wait
+    private val wait = WebDriverWait(driver, Duration.ofSeconds(Configuration.WebDriver.timeout.toLong()))
+        .ignoring(StaleElementReferenceException::class.java, ElementClickInterceptedException::class.java)
 
     // Selenium declares condition results @Nullable; until() returns only a non-null, non-false value
     // (it throws TimeoutException otherwise), so the result is non-null for callers
@@ -32,10 +36,25 @@ abstract class BasePage(protected val driver: WebDriver) {
         waitUntil("$name are not visible ($locator)", ExpectedConditions.visibilityOfAllElementsLocatedBy(locator))
 
     protected fun click(locator: By, name: String) {
-        waitUntil("$name is not clickable ($locator)", ExpectedConditions.elementToBeClickable(locator)).click()
+        click("$name is not clickable ($locator)") { it.findElement(locator) }
     }
 
+    /**
+     * Clicks inside the wait: the element is found again on every poll and an intercepted click is retried,
+     * where checking clickability first and clicking afterwards fails on whatever happens in between.
+     */
+    protected fun click(failureMessage: String, find: (WebDriver) -> WebElement?) {
+        waitUntil(
+            failureMessage,
+            ExpectedCondition { driver -> find(driver)?.takeIf { it.isDisplayed && it.isEnabled }?.apply { click() } }
+        )
+    }
+
+    // clear() first: typing into a prefilled field would append to its value
     protected fun type(locator: By, name: String, text: String) {
-        visible(locator, name).sendKeys(text)
+        visible(locator, name).apply {
+            clear()
+            sendKeys(text)
+        }
     }
 }

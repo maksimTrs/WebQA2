@@ -2,8 +2,10 @@ package com.webqa.tests
 
 import com.webqa.core.config.Configuration
 import com.webqa.core.driver.BrowserCapabilities
+import com.webqa.core.driver.DriverSession
 import com.webqa.core.driver.WebDriverFactory
 import io.qameta.allure.Allure
+import org.openqa.selenium.JavascriptExecutor
 import org.openqa.selenium.OutputType
 import org.openqa.selenium.TakesScreenshot
 import org.openqa.selenium.WebDriver
@@ -28,11 +30,11 @@ abstract class BaseTest {
     @Parameters("browser")
     @BeforeMethod(alwaysRun = true)
     fun setUp(@Optional browser: String?) {
-        val browserName = browser?.lowercase() ?: Configuration.browser.lowercase()
+        val browserName = browser?.lowercase() ?: Configuration.WebDriver.browser.lowercase()
         val browserCapabilities = BrowserCapabilities.fromString(browserName)
         logger.info("Initializing test with browser: {}", browserCapabilities.browserName)
 
-        WebDriverFactory.createDriver(browserCapabilities, Configuration.headless).also { driver ->
+        WebDriverFactory.createDriver(browserCapabilities).also { driver ->
             if (driver is RemoteWebDriver) {
                 logger.info(
                     "Started test on {} {}",
@@ -50,12 +52,12 @@ abstract class BaseTest {
                 attachFailureArtifacts(getDriver())
             }
         } finally {
-            WebDriverFactory.quitDriver()
+            DriverSession.quit()
         }
     }
 
     protected fun getDriver(): WebDriver {
-        return WebDriverFactory.getDriver()
+        return DriverSession.get()
     }
 
     /** Each attachment on its own: a browser that cannot provide one (Firefox has no console log) keeps the rest. */
@@ -67,7 +69,12 @@ abstract class BaseTest {
             val screenshot = (driver as TakesScreenshot).getScreenshotAs(OutputType.BYTES)
             Allure.addAttachment("Screenshot on failure", "image/png", ByteArrayInputStream(screenshot), "png")
         }
+        // React mirrors typed input into the value attribute, so a failure on a form would put the password
+        // into the HTML. If the script fails, attach() skips the page source rather than attach it unmasked
         attach("Page source on failure") {
+            (driver as JavascriptExecutor).executeScript(
+                "document.querySelectorAll('input[type=password]').forEach(e => e.removeAttribute('value'))"
+            )
             Allure.addAttachment("Page source on failure", "text/html", driver.pageSource.orEmpty(), "html")
         }
         // Chrome only: BrowserCapabilities.Chrome enables goog:loggingPrefs

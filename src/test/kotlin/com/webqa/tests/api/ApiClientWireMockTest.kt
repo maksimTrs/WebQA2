@@ -17,9 +17,9 @@ import com.webqa.core.utils.TestDataGenerator.generatePassword
 import com.webqa.tests.BaseApiTest
 import com.webqa.tests.ExpectedMessages
 import com.webqa.tests.TestGroups
-import com.webqa.tests.api.wiremock.WireMockTestExtension
-import com.webqa.tests.api.wiremock.WireMockTestExtension.Companion.PRODUCTS_ENDPOINT
-import com.webqa.tests.api.wiremock.WireMockTestExtension.Companion.SIGNUP_ENDPOINT
+import com.webqa.tests.wiremock.WireMockTestExtension
+import com.webqa.tests.wiremock.WireMockTestExtension.Companion.PRODUCTS_ENDPOINT
+import com.webqa.tests.wiremock.WireMockTestExtension.Companion.SIGNUP_ENDPOINT
 import io.qameta.allure.Description
 import io.qameta.allure.Feature
 import io.qameta.allure.Severity

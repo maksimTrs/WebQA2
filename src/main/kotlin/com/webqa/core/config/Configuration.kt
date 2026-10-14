@@ -6,11 +6,13 @@ import com.typesafe.config.ConfigFactory
 object Configuration {
     private val config: Config = ConfigFactory.load()
 
-    val browser: String = config.getString("webdriver.browser")
-    val headless: Boolean = config.getBoolean("webdriver.headless")
-    val timeout: Int = config.getInt("webdriver.timeout")
-    val gridUrl: String = config.getString("webdriver.gridUrl")
-    val remote: Boolean = config.getBoolean("webdriver.remote")
+    object WebDriver {
+        val browser: String = config.getString("webdriver.browser")
+        val headless: Boolean = config.getBoolean("webdriver.headless")
+        val timeout: Int = config.getInt("webdriver.timeout")
+        val gridUrl: String = config.getString("webdriver.gridUrl")
+        val remote: Boolean = config.getBoolean("webdriver.remote")
+    }
 
     object App {
         val baseUrl: String = config.getString("app.baseUrl")

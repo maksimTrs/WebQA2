@@ -1,10 +1,10 @@
 package com.webqa.core.api.clients
 
 import com.webqa.core.config.Configuration
+import com.webqa.petstore.apis.PetApi
 import io.qameta.allure.okhttp3.AllureOkHttp3
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
-import org.openapitools.client.apis.PetApi
 import org.slf4j.LoggerFactory
 import java.time.Duration
 

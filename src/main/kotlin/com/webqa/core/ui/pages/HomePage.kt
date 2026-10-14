@@ -55,9 +55,9 @@ class HomePage(driver: WebDriver) : BasePage(driver) {
     fun addProductToCart(index: Int): HomePage {
         val cards = allVisible(PRODUCT_CARDS, "Product cards")
         check(index in cards.indices) { "No product card #$index: ${cards.size} displayed" }
-        val button = cards[index].findElement(ADD_TO_CART_BUTTON)
-        waitUntil("'Add to cart' of product #$index is not clickable", ExpectedConditions.elementToBeClickable(button))
-            .click()
+        click("'Add to cart' of product #$index is not clickable") {
+            it.findElements(PRODUCT_CARDS).getOrNull(index)?.findElement(ADD_TO_CART_BUTTON)
+        }
         return this
     }
 
