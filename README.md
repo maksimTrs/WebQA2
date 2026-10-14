@@ -14,14 +14,27 @@ UI and API test automation for the WebQA demo shop, written in Kotlin on TestNG,
 
 <sub>Source: <code>docs/architecture.html</code>. After editing it, re-take both PNG screenshots of <code>.frame</code> (light and dark color scheme, 2x).</sub>
 
-- **UI**: page objects on explicit waits (`WebDriverWait`, no implicit waits). One driver per thread, so suites run in parallel. Chrome or Firefox, locally or on Selenium Grid. A screenshot is attached to Allure when a test fails.
+- **UI**: fluent page objects (`HomePage.open().clickLogin().login(...)` returns the next page) on explicit waits only. Elements are found by `By` on each action, not through PageFactory proxies, and every wait fails with a message naming the element. Each page action is an Allure step. One driver per thread, so suites run in parallel. Chrome or Firefox, locally or on Selenium Grid. A failed test gets the URL, a screenshot, the page source and (Chrome) the browser console attached to Allure.
 - **API**: one `ApiClient` base for all clients. It applies timeouts and logging, and every call is attached to Allure. The `Authorization` header is masked in logs and in Allure. The login call carries the password in and the token out, so only its URI and status are logged, and it is not attached.
-- **Mocks**: the same client can point at a WireMock container, which serves stateful scenarios, delays and rate limiting (`SignUpWireMockTest`).
+- **Mocks**: `ApiClientWireMockTest` points the clients at a WireMock container to test the framework itself where the live stand cannot: the request body and headers the clients send, that the models survive undeclared response fields and keep decimal prices exact, and that a slow response hits the client timeout instead of hanging the run.
 - **Petstore**: a client generated from `petstore-openapi.json` by OpenAPI Generator. Tests delete the pets they create. They target the public demo by default; `docker compose up -d --wait petstore` plus `PETSTORE_BASE_URL=http://localhost:8085/api/v3` runs them against a local copy.
 - **Config**: `application.conf` (Typesafe Config) with environment-variable overrides. A test that logs in fails at once with a clear message if `TEST_USER_EMAIL` / `TEST_PASSWORD` is missing; tests that do not log in (sign-up, Petstore, WireMock) run without them.
-- **Suites**: TestNG suites select tests by package and group (`smoke`, `wiremock`), not by class or method name, so a new or renamed test stays in its suites.
+- **Suites**: TestNG suites select tests by package and group (`smoke`, `wiremock`, `destructive`), not by class or method name, so a new or renamed test stays in its suites.
+- **Reports**: Allure sorts failures into categories (`config/allure/categories.json`): *Test stand unavailable* (connection errors, timeouts, 5xx), *Product defects* (an assertion failed) and *Broken tests* (any other exception).
 
 Stack: Kotlin · Gradle · TestNG · Selenium 4 · REST Assured · WireMock · AssertJ · Allure · DataFaker · detekt.
+
+## Design decisions
+
+The trade-offs behind the framework, and what each one costs.
+
+- **Login inside the test, not in a configuration method.** A failed `@BeforeMethod`/`@BeforeClass` marks the tests SKIPPED, which hides a broken login. UI tests log in through a helper called from the test body; API tests use a `lazy` token that a failed login leaves uninitialized, so every test fails with the login error. Cost: the first API test of a class carries the login time.
+- **No automatic test retries.** A retried pass hides a flaky test or a flaky product. Instead the CI checks the stand before smoke and Allure files outages under *Test stand unavailable*. Only driver session creation is retried: that is infrastructure, not the subject of a test.
+- **`By` locators instead of PageFactory.** PageFactory caches proxies that go stale when React re-renders a node; a `By` is resolved on each action. Waits name the element in their failure message, and checks that wait (cart, alert) fail with that message instead of returning `false`.
+- **Locators without test ids.** The stand has no `data-testid` and the frontend is not ours to change. Locators prefer `id`, `href` and visible text; MUI class names are used only where nothing else identifies the element (product cards, *Add to cart*). All of them are constants in their page object, so a theme change is a one-file fix.
+- **A shared live stand.** Each test creates its own data (UUID emails, random pet ids) and deletes what it can (Petstore pets). An order cannot be undone through the API, so the order test is in the `destructive` group and runs only in `regression.xml`.
+- **Two HTTP clients.** REST Assured for the hand-written WebQA API clients; a client generated from the OpenAPI spec for Petstore, to show the contract-first approach. Cost: the generated client brings OkHttp and Moshi next to REST Assured and Jackson.
+- **WireMock tests the framework, not the backend.** Stubs that only echo themselves prove nothing; the mocked tests check what the live stand cannot show: the request contract, tolerance to response drift, and that timeouts are applied.
 
 ## Setup
 
@@ -52,10 +65,10 @@ WEBDRIVER_HEADLESS=true ./gradlew test -PsuiteFile=src/test/resources/smoke-ui.x
 | Suite (`src/test/resources/`) | Content |
 |---|---|
 | `smoke-api.xml`, `smoke-ui.xml` | Group `smoke`: critical path. Used by CI |
-| `api-tests.xml` | WebQA API and Petstore tests |
+| `api-tests.xml` | WebQA API and Petstore tests, except `wiremock` and `destructive` |
 | `ui-tests.xml` | UI tests in Chrome and Firefox in parallel |
-| `testNg.xml` | All tests except group `wiremock` |
-| `regression.xml` | Everything, including WireMock (needs the container) |
+| `testNg.xml` | All tests except groups `wiremock` and `destructive` |
+| `regression.xml` | Everything, including WireMock (needs the container) and `destructive` (buys stock on the shared stand) |
 
 ### Selenium Grid
 
@@ -70,10 +83,10 @@ Grid UI: http://localhost:4444/ui. Watch a browser over VNC: Chrome at http://lo
 
 ```bash
 docker compose up -d --wait wiremock      # host port: WIREMOCK_PORT, default 9999
-./gradlew test --tests com.webqa.tests.api.SignUpWireMockTest
+./gradlew test --tests com.webqa.tests.api.ApiClientWireMockTest
 ```
 
-The tests register their own stubs via the admin API and reset WireMock before and after the class, so `wiremock/mappings` can stay empty and an interrupted run leaves no state behind.
+The tests register their own stubs via the admin API, each matching a value unique to its test (email, token), and reset WireMock before and after the class, so `wiremock/mappings` can stay empty and an interrupted run leaves no state behind.
 
 ## Reports
 
@@ -86,16 +99,17 @@ Raw results are written to `build/allure-results`, JUnit XML to `build/test-resu
 ## Static analysis
 
 ```bash
-./gradlew detekt detektSecurityCheck
+./gradlew detekt detektStrict
 ```
 
-Both tasks fail on any finding (`maxIssues: 0`). Reports are written to `build/reports/detekt/`. Config: `config/detekt/detekt.yml` (only the deviations from the detekt defaults) and `detekt-security.yml`.
+Both tasks fail on any finding (`maxIssues: 0`). Reports are written to `build/reports/detekt/`. Config: `config/detekt/detekt.yml` (only the deviations from the detekt defaults) and `detekt-strict.yml`, a stricter subset for exception handling, potential bugs and nullability. Neither is a security scan.
 
 ## CI
 
 `.github/workflows/smoke.yml` runs on pushes to `master`, on pull requests and manually:
 
 - **Lint Check**: detekt.
+- **Test Stand Check**: `curl` on the app and the API, three attempts. If the stand does not answer, the test jobs are skipped with one clear error instead of a page of failures, and no report replaces the published one.
 - **API Tests**: `smoke-api.xml`.
 - **UI Tests**: `smoke-ui.xml` on Selenium Grid in Docker.
 - **Allure Report**: merges the results of both test jobs into one report, uploaded as an artifact. On `master` it is deployed to GitHub Pages.

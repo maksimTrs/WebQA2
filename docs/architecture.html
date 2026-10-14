@@ -126,7 +126,7 @@
   /* ---------- entry band ---------- */
   .entry { display: grid; grid-template-columns: 1.75fr 1fr; gap: 16px; }
   .entry .card { padding: 14px 16px; }
-  .jobs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
+  .jobs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; }
   .job {
     min-width: 0;
     background: var(--surface-recessed);
@@ -291,6 +291,7 @@
       <p class="dim"><code>smoke.yml</code>: push to master · pull request · manual — <code>regression.yml</code>: manual</p>
       <div class="jobs">
         <div class="job"><b>Lint Check</b><span>detekt</span></div>
+        <div class="job"><b>Stand check</b><span>before tests</span></div>
         <div class="job"><b>API smoke</b><span>smoke-api.xml</span></div>
         <div class="job"><b>UI smoke</b><span>smoke-ui.xml</span></div>
         <div class="job"><b>Allure</b><span>→ GitHub Pages</span></div>
@@ -333,7 +334,7 @@
       <h3>UI tests</h3>
       <div class="path">tests/ui</div>
       <p>LoginTest · ProductTest · SignUpUITest</p>
-      <p class="dim">screenshot to Allure on failure</p>
+      <p class="dim">screenshot · page source · console to Allure on failure</p>
     </div>
     <div class="card" style="grid-column:3; grid-row:2">
       <span class="tag">API</span>
@@ -346,8 +347,8 @@
       <span class="tag">Mock</span>
       <h3>WireMock tests</h3>
       <div class="path">tests/api · wiremock/</div>
-      <p>SignUpWireMockTest</p>
-      <p class="dim">stateful scenarios · delays · rate limit</p>
+      <p>ApiClientWireMockTest</p>
+      <p class="dim">request contract · response drift · timeouts</p>
     </div>
     <div class="card" style="grid-column:5; grid-row:2">
       <span class="tag">API</span>
