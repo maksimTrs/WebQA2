@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dino Blocks</title>
+<style>
+:root{--bg:#0d1830;--fg:#fff}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);font-family:Consolas,monospace}
+body{display:grid;place-items:center}
+#wrap{position:relative;width:min(calc(100vw - 32px),calc((100vh - 32px)*16/9));aspect-ratio:16/9}
+canvas{width:100%;height:100%;display:block}
+#play{position:absolute;inset:0;display:grid;place-items:center;background:rgba(13,24,48,.5);cursor:pointer;font:inherit;font-size:clamp(14px,2.4vw,28px);letter-spacing:.3em;border:0;color:inherit}
+</style>
+</head>
+<body>
+<div id="wrap"><canvas id="c" width="1920" height="1080"></canvas><button id="play">&#9654; ИГРАТЬ</button></div>
+<script>
+'use strict';
+/* ============================================================ core */
+const W=1920,H=1080,FPS=60,DUR=15,BPM=128,BEAT=60/BPM,BAR=BEAT*4,TAU=Math.PI*2;
+const {sin,cos,abs,floor,min,max,PI,sqrt,pow,exp,round,hypot}=Math;
+const clamp=(x,a=0,b=1)=>x<a?a:x>b?b:x;
+const lerp=(a,b,t)=>a+(b-a)*t;
+const P=(t,a,b)=>clamp((t-a)/(b-a));
+const E={
+  outCubic:t=>1-pow(1-t,3), inCubic:t=>t*t*t, inOutCubic:t=>t<.5?4*t*t*t:1-pow(-2*t+2,3)/2,
+  outBack:t=>{const c1=1.70158,c3=c1+1;return 1+c3*pow(t-1,3)+c1*pow(t-1,2)},
+};
+function rng(a){return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const hash=(x,y=0,s=0)=>{const v=sin(x*127.1+y*311.7+s*74.7)*43758.5453;return v-floor(v)};
+const hex=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+function mk(w=W,h=H){const c=document.createElement('canvas');c.width=w;c.height=h;return c}
+const kickEnv=t=>(t<BAR||t>=7*BAR)?0:exp(-(t%BEAT)*12);
+const HITS=[5*BAR,5*BAR+2*BEAT,6*BAR,6*BAR+BEAT,6*BAR+2*BEAT,6*BAR+3*BEAT,7*BAR]; // last one = big finale
+const FINAL=7*BAR;
+
+/* ============================================================ 3x3 math */
+const mv=(M,v)=>[M[0]*v[0]+M[1]*v[1]+M[2]*v[2],M[3]*v[0]+M[4]*v[1]+M[5]*v[2],M[6]*v[0]+M[7]*v[1]+M[8]*v[2]];
+const mm=(A,B)=>{const R=new Array(9);for(let i=0;i<3;i++)for(let j=0;j<3;j++)R[i*3+j]=A[i*3]*B[j]+A[i*3+1]*B[3+j]+A[i*3+2]*B[6+j];return R};
+const I3=[1,0,0,0,1,0,0,0,1];
+const rotY=a=>{const c=cos(a),s=sin(a);return[c,0,s,0,1,0,-s,0,c]};
+const rotZ=a=>{const c=cos(a),s=sin(a);return[c,-s,0,s,c,0,0,0,1]};
+const axAng=(k,a)=>{const c=cos(a),s=sin(a),t=1-c,[x,y,z]=k;return[t*x*x+c,t*x*y-s*z,t*x*z+s*y,t*x*y+s*z,t*y*y+c,t*y*z-s*x,t*x*z-s*y,t*y*z+s*x,t*z*z+c]};
+const sc=(M,s)=>M.map(v=>v*s);
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]];
+const lerp3=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
+const randAxis=R=>{const a=[R()-.5,R()-.5,R()-.5],l=hypot(...a)||1;return a.map(v=>v/l)};
+
+/* ============================================================ pixel textures (16x16, 12 shade levels) */
+const LV=12;
+function shades(fn,seed){
+  const R=rng(seed),base=[];for(let y=0;y<16;y++)for(let x=0;x<16;x++)base.push(fn(x,y,R));
+  return Array.from({length:LV},(_,k)=>{const b=0.45+k*0.05,c=mk(16,16),g=c.getContext('2d'),id=g.createImageData(16,16);
+    base.forEach(([r,gg,bb],i)=>{id.data[i*4]=r*b;id.data[i*4+1]=gg*b;id.data[i*4+2]=bb*b;id.data[i*4+3]=255});g.putImageData(id,0,0);return c});
+}
+const nz=(h,amp)=>{const c=hex(h);return(x,y,R)=>{const f=1+(R()-.5)*amp;return c.map(v=>v*f)}};
+const grassTop=nz('#69B23E',.3),dirt=nz('#8B5B34',.34);
+const grassSide=(x,y,R)=>(y<3||(y==3&&hash(x,1)>.45)||(y==4&&hash(x,2)>.8))?grassTop(x,y,R):dirt(x,y,R);
+const planks=(x,y,R)=>{const row=floor(y/4);return(y%4==3||x==(row*5+3)%16)?hex('#7A5630').map(v=>v*(0.9+R()*.15)):nz('#A97E4A',.14)(x,y,R)};
+const iron=(x,y,R)=>(x==0||y==0)?hex('#F4F6F8'):(x==15||y==15)?hex('#8F959E'):nz('#D3D8DE',.07)(x,y,R);
+const leaves=(x,y,R)=>R()<.16?hex('#25611A'):nz('#3E8F2C',.35)(x,y,R);
+const bark=(x,y,R)=>x%4==0?hex('#4E3820'):nz('#6B4E2E',.25)(x,y,R);
+const grip=(x,y,R)=>(x+y)%5==0?hex('#3A2412'):nz('#5C3B20',.2)(x,y,R);
+function material(seed,top,side=top,bottom=side){return{top:shades(top,seed),side:shades(side,seed+1),bottom:shades(bottom,seed+2)}}
+const M={
+  grass:material(1,grassTop,grassSide,dirt), dirt:material(4,dirt), stone:material(7,nz('#8E8E8E',.32)),
+  blue:material(10,nz('#2F7DF2',.18)), belly:material(13,nz('#8FD0FF',.1)), spike:material(16,nz('#1A4FB5',.16)),
+  white:material(19,nz('#F3F6FA',.06)), black:material(22,nz('#15171C',.12)), mouth:material(25,nz('#10296A',.12)),
+  wood:material(28,planks), grip:material(31,grip), iron:material(34,iron), ironDark:material(37,nz('#8F959E',.1)),
+  leaves:material(40,leaves), log:material(43,nz('#B08850',.2),bark),
+};
+const BLUE_PIX=[0,1,2].map(i=>{const c=hex(['#2F7DF2','#5FA2FF','#1A4FB5'][i]);return `rgb(${c})`});
+
+/* ============================================================ models */
+function boxInto(map,x0,x1,y0,y1,z0,z1,m){for(let x=x0;x<=x1;x++)for(let y=y0;y<=y1;y++)for(let z=z0;z<=z1;z++)map.set(`${x},${y},${z}`,m)}
+const NB=[[1,0,0],[-1,0,0],[0,0,1],[0,0,-1],[0,1,0],[0,-1,0]];
+function finalize(map,segOf){
+  const list=[...map].map(([k,m])=>{const g=k.split(',').map(Number);return{g,m,seg:segOf?segOf(g):0}});
+  const idx=new Map(list.map((v,i)=>[v.g.join(','),i]));
+  list.forEach(v=>{v.nb=NB.map(d=>{const j=idx.get(`${v.g[0]+d[0]},${v.g[1]+d[1]},${v.g[2]+d[2]}`);return j!==undefined&&list[j].seg===v.seg?j:-1})});
+  return list;
+}
+// --- island + tree
+const GROUND=(()=>{const m=new Map();boxInto(m,-18,25,-1,-1,-8,8,'grass');boxInto(m,-18,25,-3,-2,-8,8,'dirt');boxInto(m,-17,24,-4,-4,-7,7,'stone');
+  const L=finalize(m);L.forEach(v=>{v.d=hypot(v.g[0]-3,v.g[2]*1.4)});return L})();
+const TREE=(()=>{const m=new Map();boxInto(m,-17,-13,4,5,-9,-5,'leaves');boxInto(m,-16,-14,6,6,-8,-6,'leaves');m.set('-15,7,-7','leaves');boxInto(m,-15,-15,0,4,-7,-7,'log');return finalize(m)})();
+// --- the dinosaur (faces +x)
+const DINO=(()=>{
+  const m=new Map(),b=(...a)=>boxInto(m,...a);
+  for(const [z0,z1] of [[-3,-2],[2,3]]){b(-2,2,0,0,z0,z1,'blue');b(-2,0,1,3,z0,z1,'blue');b(-3,1,4,6,z0,z1,'blue')}
+  b(-5,3,4,10,-2,2,'blue');                                // body
+  b(-8,-6,5,9,-2,2,'blue');b(-11,-9,5,7,-1,1,'blue');b(-14,-12,4,5,-1,1,'blue');b(-16,-15,4,4,0,0,'blue'); // tail
+  b(2,5,10,13,-2,2,'blue');b(3,10,13,18,-2,2,'blue');      // neck + head
+  for(const [k,v] of m)if(v==='blue'){const [x,y,z]=k.split(',').map(Number);if(x>=0&&x<=5&&y<=8&&abs(z)<=1)m.set(k,'belly')}
+  b(7,10,14,14,-2,2,'mouth');for(const z of [-2,2]){m.set(`8,14,${z}`,'white');m.set(`10,14,${z}`,'white')}m.set('10,14,-1','white');m.set('10,14,1','white');
+  for(const z of [-2,2]){m.set(`6,17,${z}`,'white');m.set(`7,17,${z}`,'white');m.set(`6,16,${z}`,'white');m.set(`7,16,${z}`,'black')}
+  for(const z of [-1,1])m.set(`10,17,${z}`,'black');
+  for(const z of [-3,3]){m.set(`3,7,${z}`,'blue');m.set(`4,7,${z}`,'blue');m.set(`5,7,${z}`,'blue');m.set(`5,6,${z}`,'white')}
+  for(let x=-15;x<=5;x+=2){let top=-1;for(let y=0;y<30;y++)if(m.has(`${x},${y},0`))top=y;if(top<0)continue;m.set(`${x},${top+1},0`,'spike');if(x>=-8&&x<=3)m.set(`${x},${top+2},0`,'spike')}
+  const L=finalize(m,([x,y])=>x<=-6?1:(x>=2&&y>=11?2:0)),R=rng(99);
+  L.forEach(v=>{
+    const [x,y,z]=v.g;v.T=[x,y+0.5,z];
+    v.s=1.95+clamp(y/21)*4.25+R()*0.18;
+    if(v.m==='white'&&y>=16||v.m==='black'&&y==16){v.s=6.72+R()*0.08;v.eye=true}
+    v.off=[(R()-.5)*22,16+R()*14,(R()-.5)*22];v.ax=randAxis(R);v.ang=(1+R())*PI;
+    const d=sub(v.T,[6,17,0]),l=hypot(...d)||1,sp=9+R()*11;v.vel=[d[0]/l*sp,d[1]/l*sp+7+R()*7,d[2]/l*sp+(R()-.5)*6];v.spin=(R()-.5)*18;
+    v.r=13.62+clamp(y/21)*0.55+R()*0.12;
+  });
+  return L;
+})();
+// --- the hammer (local: pivot at origin, handle along +Y, head along X)
+const HAMMER=(()=>{
+  const m=new Map();boxInto(m,0,1,0,10,0,1,'wood');boxInto(m,0,1,0,2,0,1,'grip');boxInto(m,-3,4,11,14,-1,2,'iron');
+  for(const x of [-3,4])boxInto(m,x,x,11,14,-1,2,'ironDark');
+  const L=finalize(m),R=rng(7);
+  L.forEach(v=>{const [x,y,z]=v.g;v.L=[x-0.5,y+0.5,z-0.5];v.s=7.62+y/14*0.95+R()*0.1;v.off=[18+R()*16,10+R()*16,(R()-.5)*24];v.ax=randAxis(R);v.ang=(1+R())*PI;
+    v.vel=[12+R()*16,20+R()*12,(R()-.5)*18];v.spin=(R()-.5)*16});
+  return L;
+})();
+const PIVOT=[20,23,0],RAISE=-0.35,DOWN=PI/2;
+
+/* ============================================================ animation state */
+function hammerTheta(t){
+  let th=RAISE;
+  for(const h of HITS){
+    if(t>=h-0.22&&t<h-0.11)th=lerp(RAISE,RAISE-0.4,E.outCubic(P(t,h-0.22,h-0.11)));
+    else if(t>=h-0.11&&t<h)th=lerp(RAISE-0.4,DOWN,E.inCubic(P(t,h-0.11,h)));
+    else if(t>=h&&t<h+0.24&&h<FINAL)th=lerp(DOWN,RAISE,E.inOutCubic(P(t,h+0.03,h+0.24)))-0.22*sin(P(t,h,h+0.09)*PI);
+  }
+  return t>=FINAL?DOWN:th;
+}
+const lastHit=t=>{let h=-9;for(const x of HITS)if(t>=x)h=x;return h};
+function squash(t){let s=0;for(const h of HITS)if(h<FINAL&&t>=h&&t<h+1.2)s+=exp(-(t-h)*7)*cos((t-h)*26)*0.3;return s}
+const bump=(t,a,b)=>sin(P(t,a,b)*PI);
+function nod(t){let n=0.05*kickEnv(t)*P(t,6.6,7.0)+0.3*bump(t,6.95,7.5);for(const h of HITS)if(h<FINAL&&t>=h)n-=0.28*exp(-(t-h)*8);return n}
+function eyesClosed(t){if(abs(t-7.75)<0.06||abs(t-8.85)<0.06)return true;const h=lastHit(t);return h>0&&h<FINAL&&t-h<0.35}
+
+/* ============================================================ camera */
+const CK=[[0,70,36,13,[2,0,0]],[1.875,48,28,23,[-2,5,0]],[6.6,26,24,29,[-2,9,0]],[7.5,22,24,28,[0,11,0]],[9.15,30,22,22.5,[5,16,0]],[13.1,40,22,22.5,[5,15.5,0]],[13.75,46,27,21,[-1,9,0]],[15,32,24,27,[-1,12.5,0]]];
+let CAM;
+function setCam(t){
+  let i=0;while(i<CK.length-2&&t>=CK[i+1][0])i++;
+  const a=CK[i],b=CK[i+1],u=E.inOutCubic(P(t,a[0],b[0]));
+  const yaw=lerp(a[1],b[1],u)*PI/180,pit=lerp(a[2],b[2],u)*PI/180;
+  let k=lerp(a[3],b[3],u);const tg=lerp3(a[4],b[4],u);
+  for(const h of HITS)if(t>=h)k*=1+(h==FINAL?0.1:0.05)*exp(-(t-h)*10);
+  let sx=0,sy=0;const h=lastHit(t),amp=(h>0?(h==FINAL?34:14)*exp(-(t-h)*14):0)+3*kickEnv(t);
+  if(amp>0.05){const R=rng(floor(t*FPS*2)+3);sx=(R()-.5)*2*amp;sy=(R()-.5)*2*amp}
+  const cp=cos(pit),sp=sin(pit),cy=cos(yaw),sy2=sin(yaw);
+  CAM={yaw,k,tg,ox:W/2+sx,oy:H/2+sy,c:[cp*sy2,sp,cp*cy],r:[cy,0,-sy2],u:[-sp*sy2,cp,-sp*cy]};
+}
+const proj=p=>{const d=sub(p,CAM.tg),r=CAM.r,u=CAM.u;return[CAM.ox+CAM.k*(r[0]*d[0]+r[2]*d[2]),CAM.oy-CAM.k*(u[0]*d[0]+u[1]*d[1]+u[2]*d[2])]};
+const projv=v=>{const r=CAM.r,u=CAM.u;return[CAM.k*(r[0]*v[0]+r[2]*v[2]),-CAM.k*(u[0]*v[0]+u[1]*v[1]+u[2]*v[2])]};
+
+/* ============================================================ cube renderer (orthographic, painter's order, textured via affine) */
+// per face: [edge index, sign, U edge (sign), V edge (sign), texture kind]
+const FACES=[[0,1,[2,-1],[1,-1],'side'],[0,-1,[2,1],[1,-1],'side'],[2,1,[0,1],[1,-1],'side'],[2,-1,[0,-1],[1,-1],'side'],[1,1,[0,1],[2,1],'top'],[1,-1,[0,1],[2,-1],'bottom']];
+function drawCube(ctx,q){
+  const Mx=q.M,ed=[[Mx[0],Mx[3],Mx[6]],[Mx[1],Mx[4],Mx[7]],[Mx[2],Mx[5],Mx[8]]],pe=ed.map(projv),[px,py]=proj(q.c),cc=CAM.c,mat=M[q.m];
+  for(let f=0;f<6;f++){
+    if(q.cull&(1<<f))continue;
+    const [a,s,[ua,us],[va,vs],kind]=FACES[f],e=ed[a],l=hypot(e[0],e[1],e[2])||1,nx=e[0]*s/l,ny=e[1]*s/l,nzz=e[2]*s/l;
+    if(nx*cc[0]+ny*cc[1]+nzz*cc[2]<=1e-4)continue;
+    const b=0.75+0.25*ny+0.08*nzz-0.05*nx,tex=mat[kind][clamp(round((b-0.45)/0.05),0,LV-1)];
+    const Ux=pe[ua][0]*us,Uy=pe[ua][1]*us,Vx=pe[va][0]*vs,Vy=pe[va][1]*vs;
+    const fx=px+pe[a][0]*s/2-Ux/2-Vx/2,fy=py+pe[a][1]*s/2-Uy/2-Vy/2;
+    ctx.setTransform(Ux/16,Uy/16,Vx/16,Vy/16,fx,fy);ctx.drawImage(tex,-0.16,-0.16,16.32,16.32);
+  }
+}
+function cullMask(v,free,list){let c=0;if(free[v.i])return 0;for(let f=0;f<6;f++){const j=v.nb[f];if(j>=0&&!free[j])c|=1<<f}return c}
+
+function groundCubes(t){
+  const out=[],free=GROUND.map(v=>t<v.d*0.03+0.62);
+  GROUND.forEach((v,i)=>{v.i=i;const u=P(t,0.1+v.d*0.03,0.6+v.d*0.03);if(u<=0)return;
+    const dy=-14*(1-E.outBack(u));out.push({c:[v.g[0],v.g[1]+0.5+dy,v.g[2]],M:I3,m:v.m,cull:cullMask(v,free)})});
+  TREE.forEach((v,i)=>{const u=P(t,1.05+v.g[1]*0.05,1.45+v.g[1]*0.05);if(u<=0)return;const s=E.outBack(u);
+    out.push({c:[v.g[0],v.g[1]+0.5,v.g[2]],M:sc(I3,s),m:v.m,cull:u>=1?(v.nb.reduce((c,j,f)=>j>=0?c|1<<f:c,0)):0})});
+  return out;
+}
+function dinoCubes(t,out){
+  const sq=squash(t),sy=1-sq,sxz=1+sq*0.5,S=[sxz,0,0,0,sy,0,0,0,sxz],base=[-2,0,0];
+  const wagA=sin(t*5.2)*0.16*P(t,6.4,6.8),nd=nod(t),Rt=rotY(wagA),Rh=rotZ(nd),closed=eyesClosed(t),ex=t-FINAL;
+  const free=new Array(DINO.length);let settled=0;
+  const st=DINO.map((v,i)=>{
+    v.i=i;if(t<v.s){free[i]=true;return null}
+    const e=E.outCubic(P(t,v.s,v.s+0.42));
+    let R=I3,c=v.T;
+    if(v.seg==1){R=Rt;c=add([-5,0,0],mv(Rt,sub(c,[-5,0,0])))}
+    else if(v.seg==2){R=Rh;c=add([3,11,0],mv(Rh,sub(c,[3,11,0])))}
+    c=add(base,mv(S,sub(c,base)));let Mx=mm(S,R);
+    if(e<1){c=lerp3(add(v.T,v.off),c,e);Mx=sc(mm(Mx,axAng(v.ax,v.ang*(1-e))),lerp(0.3,1,E.outBack(P(t,v.s,v.s+0.3))))}
+    let fr=e<1;
+    if(ex>=0){
+      const tau=min(ex,v.r-FINAL),re=E.inOutCubic(P(t,v.r,v.r+0.42));
+      const pe=[v.T[0]+v.vel[0]*tau,max(0.5,v.T[1]+v.vel[1]*tau-16*tau*tau),v.T[2]+v.vel[2]*tau];
+      c=lerp3(pe,c,re);Mx=mm(Mx,axAng(v.ax,v.spin*tau*(1-re)));fr=re<1;
+    }
+    free[i]=fr;if(!fr||ex<0&&e>=1)settled++;
+    return{c,M:Mx,m:v.eye&&closed?'blue':v.m};
+  });
+  DINO.forEach((v,i)=>{if(st[i]){st[i].cull=cullMask(v,free);out.push(st[i])}});
+  return settled;
+}
+function hammerCubes(t,out){
+  if(t<HAMMER[0].s-0.01)return 0;
+  const th=hammerTheta(t),R=rotZ(th),pv=[PIVOT[0],PIVOT[1]+sin(t*3)*0.3*(t<FINAL),PIVOT[2]],ex=t-FINAL;
+  const free=new Array(HAMMER.length);let n=0;const st=[];
+  HAMMER.forEach((v,i)=>{
+    v.i=i;if(t<v.s){free[i]=true;return}
+    const e=E.outCubic(P(t,v.s,v.s+0.4));let c=add(pv,mv(R,v.L)),Mx=R;
+    if(e<1){c=lerp3(add(c,v.off),c,e);Mx=sc(mm(R,axAng(v.ax,v.ang*(1-e))),lerp(0.3,1,E.outBack(P(t,v.s,v.s+0.3))))}else n++;
+    if(ex>=0){c=[c[0]+v.vel[0]*ex,c[1]+v.vel[1]*ex-16*ex*ex,c[2]+v.vel[2]*ex];Mx=sc(mm(R,axAng(v.ax,v.spin*ex)),1-E.inCubic(P(ex,0,0.8)))}
+    free[i]=e<1||ex>=0;st[i]={c,M:Mx,m:v.m};
+  });
+  HAMMER.forEach((v,i)=>{if(st[i]){st[i].cull=cullMask(v,free);out.push(st[i])}});
+  return ex>=0?0:n;
+}
+
+/* ============================================================ 2D overlays */
+const GL={
+  'Д':['.###.','.#.#.','.#.#.','.#.#.','.#.#.','#####','#...#'],'И':['#...#','#...#','#..##','#.#.#','##..#','#...#','#...#'],
+  'Н':['#...#','#...#','#...#','#####','#...#','#...#','#...#'],'О':['.###.','#...#','#...#','#...#','#...#','#...#','.###.'],
+  'Б':['#####','#....','#....','####.','#...#','#...#','####.'],'А':['.###.','#...#','#...#','#####','#...#','#...#','#...#'],
+  'М':['#...#','##.##','#.#.#','#.#.#','#...#','#...#','#...#'],'У':['#...#','#...#','#...#','.####','....#','#...#','.###.'],
+  'Х':['#...#','#...#','.#.#.','..#..','.#.#.','#...#','#...#'],'!':['..#..','..#..','..#..','..#..','..#..','.....','..#..'],
+};
+function pixText(ctx,str,cx,cy,px,front,side,outline,anim){
+  const ch=[...str],cw=6.6*px,total=ch.length*cw-1.6*px,ex=px*0.3;
+  ch.forEach((c,i)=>{
+    const g=GL[c],A=anim(i);if(!g||A.a<=0)return;
+    ctx.save();ctx.globalAlpha=A.a;ctx.translate(cx-total/2+i*cw+2.5*px,cy+A.dy);ctx.rotate(A.r||0);ctx.scale(A.s,A.s);ctx.translate(-2.5*px,-3.5*px);
+    const cells=[];g.forEach((row,y)=>[...row].forEach((v,x)=>{if(v==='#')cells.push([x*px,y*px])}));
+    ctx.fillStyle=outline;cells.forEach(([x,y])=>ctx.fillRect(x-3,y-3,px+6+ex,px+6+ex));
+    ctx.fillStyle=side;cells.forEach(([x,y])=>ctx.fillRect(x+ex,y+ex,px+0.6,px+0.6));
+    ctx.fillStyle=front;cells.forEach(([x,y])=>ctx.fillRect(x,y,px+0.6,px+0.6));
+    ctx.fillStyle='rgba(255,255,255,.35)';cells.forEach(([x,y])=>ctx.fillRect(x,y,px+0.6,px*0.2));
+    ctx.restore();
+  });
+}
+function star(ctx,x,y,p,col){ctx.fillStyle='#5A3E00';[[0,-2],[0,-1],[-2,0],[-1,0],[0,0],[1,0],[2,0],[0,1],[0,2]].forEach(([a,b])=>ctx.fillRect(x+a*p-2,y+b*p-2,p+4,p+4));ctx.fillStyle=col;[[0,-2],[0,-1],[-2,0],[-1,0],[0,0],[1,0],[2,0],[0,1],[0,2]].forEach(([a,b])=>ctx.fillRect(x+a*p,y+b*p,p,p))}
+const CLOUDS=(()=>{const R=rng(11);return Array.from({length:7},(_,i)=>({x:R()*W*1.6,y:70+R()*260,w:180+R()*260,h:34+R()*26,v:14+R()*18,z:0.5+R()*0.8}))})();
+function sky(ctx,t){
+  const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#6E9DFF');g.addColorStop(0.65,'#A9D2FF');g.addColorStop(1,'#D4ECFF');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  const sx=1640-CAM.yaw*120,sy=170;ctx.fillStyle='rgba(255,250,200,.25)';ctx.fillRect(sx-110,sy-110,220,220);ctx.fillStyle='#FFF4A8';ctx.fillRect(sx-68,sy-68,136,136);
+  for(const c of CLOUDS){const x=((c.x+t*c.v-CAM.yaw*300*c.z)%(W+800)+W+800)%(W+800)-400;
+    ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(x,c.y,c.w,c.h);ctx.fillRect(x+c.w*0.2,c.y-c.h*0.6,c.w*0.45,c.h*0.6);ctx.fillStyle='rgba(214,226,242,.9)';ctx.fillRect(x,c.y+c.h,c.w,8)}
+}
+function shadow(ctx,center,rx,rz,a){
+  if(a<=0.003)return;const o=proj(center),U=projv([rx,0,0]),V=projv([0,0,rz]);
+  ctx.save();ctx.setTransform(U[0],U[1],V[0],V[1],o[0],o[1]);ctx.fillStyle=`rgba(20,40,10,${a})`;ctx.beginPath();ctx.arc(0,0,1,0,TAU);ctx.fill();ctx.restore();
+}
+
+/* ============================================================ frame */
+function renderAt(ctx,t){
+  ctx.setTransform(1,0,0,1,0,0);ctx.globalAlpha=1;ctx.globalCompositeOperation='source-over';ctx.imageSmoothingEnabled=false;
+  setCam(t);sky(ctx,t);
+  const g=groundCubes(t).map(q=>(q.d=q.c[0]*CAM.c[0]+q.c[1]*CAM.c[1]+q.c[2]*CAM.c[2],q)).sort((a,b)=>a.d-b.d);
+  for(const q of g)drawCube(ctx,q);
+  ctx.setTransform(1,0,0,1,0,0);
+  const objs=[];const nd=dinoCubes(t,objs),nh=hammerCubes(t,objs);
+  shadow(ctx,[-3,0.02,0],12.5,4.6,0.22*P(t,2.5,6.5)*(1-P(t,FINAL,FINAL+0.2)+P(t,14.2,14.6)));
+  if(t>=8.4&&t<FINAL+0.2){const th=hammerTheta(t),hx=PIVOT[0]-sin(th)*13;shadow(ctx,[hx,0.02,0],4.5,3.5,0.16*P(t,8.4,9)*(1-P(t,FINAL,FINAL+0.2)))}
+  objs.forEach(q=>q.d=q.c[0]*CAM.c[0]+q.c[1]*CAM.c[1]+q.c[2]*CAM.c[2]);objs.sort((a,b)=>a.d-b.d);
+  for(const q of objs)drawCube(ctx,q);
+  ctx.setTransform(1,0,0,1,0,0);
+  // block-break particles + dizzy stars + БАМ!
+  for(const h of HITS){
+    const tau=t-h;if(tau<0||tau>(h==FINAL?1:0.7))continue;const R=rng(round(h*100));
+    for(let i=0;i<(h==FINAL?40:16);i++){
+      const v=[(R()-.5)*14,5+R()*8,(R()-.5)*14],p=proj([7+v[0]*tau,19.2+v[1]*tau-14*tau*tau,v[2]*tau]),s=(0.35+R()*0.25)*CAM.k;
+      ctx.fillStyle=BLUE_PIX[i%3];ctx.globalAlpha=1-P(tau,0.4,0.7);ctx.fillRect(p[0]-s/2,p[1]-s/2,s,s);
+    }
+    ctx.globalAlpha=1;
+  }
+  const h=lastHit(t),tau=t-h;
+  if(h>0&&h<FINAL&&tau<0.9)for(let i=0;i<3;i++){const a=t*7+i*TAU/3,p=proj([7+cos(a)*2.8,21.6+sin(t*9+i)*0.3,sin(a)*2.8]);star(ctx,p[0],p[1],7,'#FFE14D')}
+  if(h>0&&tau<(h==FINAL?0.7:0.42)){
+    const i=HITS.indexOf(h),word=h==FINAL?'БАБАХ!':i%2?'БУМ!':'БАМ!',hp=proj([7,19,0]),big=h==FINAL;
+    const sc=E.outBack(P(tau,0,0.12))*(big?1.25:1),a=1-P(tau,big?0.55:0.32,big?0.7:0.42);
+    pixText(ctx,word,big?W/2:hp[0]-180,big?H/2-230:hp[1]-170,big?24:15,'#FFD23F','#E0701A','#1B1030',k=>({a,s:sc,dy:-tau*60,r:(i%2?0.1:-0.1)+(k%2?0.04:-0.04)}));
+  }
+  // block counter, Minecraft-UI style
+  const ca=P(t,1.9,2.2)*(1-P(t,12.9,13.1));
+  if(ca>0){ctx.globalAlpha=ca;ctx.font='700 40px Consolas,monospace';ctx.textAlign='left';ctx.textBaseline='alphabetic';const s=`КУБИКОВ: ${nd+nh}`;
+    ctx.fillStyle='#3F3F3F';ctx.fillText(s,64,104);ctx.fillStyle='#FFFFFF';ctx.fillText(s,60,100);ctx.globalAlpha=1}
+  // title
+  if(t>=14.05){
+    pixText(ctx,'ДИНО',W/2,150,30,'#5AAEFF','#1C4FB0','#0B1A3A',k=>{const p=P(t,14.05+k*0.07,14.4+k*0.07);return{a:p>0?1:0,s:1,dy:-(1-E.outBack(p))*360,r:0}});
+    const sa=P(t,14.45,14.7);if(sa>0){ctx.globalAlpha=sa;ctx.font='700 34px Consolas,monospace';ctx.textAlign='center';const s=`СОБРАН ИЗ ${DINO.length} КУБИКОВ`;
+      ctx.fillStyle='#2B3A55';ctx.fillText(s,W/2+3,333);ctx.fillStyle='#FFFFFF';ctx.fillText(s,W/2,330);ctx.globalAlpha=1}
+  }
+}
+
+/* ============================================================ post */
+const out=document.getElementById('c').getContext('2d');
+const ACC=mk(),acc=ACC.getContext('2d'),WORK=mk(),work=WORK.getContext('2d');
+const VIG=(()=>{const c=mk(),x=c.getContext('2d'),g=x.createRadialGradient(W/2,H/2,H*0.45,W/2,H/2,H*1.1);g.addColorStop(0,'rgba(0,0,30,0)');g.addColorStop(1,'rgba(0,0,30,.28)');x.fillStyle=g;x.fillRect(0,0,W,H);return c})();
+function post(t){
+  out.setTransform(1,0,0,1,0,0);out.globalAlpha=1;out.globalCompositeOperation='source-over';out.drawImage(ACC,0,0);
+  let fl=0;for(const h of HITS)if(t>=h)fl=max(fl,(h==FINAL?0.85:0.3)*exp(-(t-h)/(h==FINAL?0.09:0.04)));
+  if(fl>0.005){out.fillStyle=`rgba(255,255,255,${fl})`;out.fillRect(0,0,W,H)}
+  out.drawImage(VIG,0,0);
+}
+const SHUTTER=0.5;
+function frame(t,sub=1){
+  if(sub<=1)renderAt(acc,t);
+  else for(let k=0;k<sub;k++){const ts=clamp(t+((k+0.5)/sub-0.5)*SHUTTER/FPS,0,DUR-1e-4);renderAt(work,ts);acc.setTransform(1,0,0,1,0,0);acc.globalAlpha=1/(k+1);acc.drawImage(WORK,0,0);acc.globalAlpha=1}
+  post(t);
+}
+
+/* ============================================================ audio — same synth and groove as the reel, new SFX */
+async function buildAudio(){
+  const sr=48000,ac=new OfflineAudioContext(2,sr*DUR,sr),R=rng(7);
+  const noise=ac.createBuffer(1,sr*3,sr);{const d=noise.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=R()*2-1}
+  const comp=ac.createDynamicsCompressor();comp.threshold.value=-15;comp.knee.value=8;comp.ratio.value=5;comp.attack.value=0.004;comp.release.value=0.18;
+  const master=ac.createGain();master.gain.setValueAtTime(0.95,0);master.gain.setValueAtTime(0.95,DUR-0.35);master.gain.linearRampToValueAtTime(0,DUR);
+  comp.connect(master);master.connect(ac.destination);
+  const bus=ac.createGain();bus.gain.value=0.75;bus.connect(comp);
+  const duck=ac.createGain();duck.connect(bus);
+  const ir=ac.createBuffer(2,sr*2.4,sr);for(let c=0;c<2;c++){const d=ir.getChannelData(c);for(let i=0;i<d.length;i++)d[i]=(R()*2-1)*pow(1-i/d.length,3.4)}
+  const verb=ac.createConvolver();verb.buffer=ir;const vr=ac.createGain();vr.gain.value=0.32;verb.connect(vr);vr.connect(comp);
+  const mf=m=>440*pow(2,(m-69)/12);
+  function out(node,pan=0,send=0,dest=bus){const p=ac.createStereoPanner();p.pan.value=pan;node.connect(p);p.connect(dest);if(send){const s=ac.createGain();s.gain.value=send;p.connect(s);s.connect(verb)}return p}
+  function env(g,t,a,peak,d){g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(peak,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d)}
+  function nz(t,dur){const s=ac.createBufferSource();s.buffer=noise;s.loop=true;s.start(t,R()*2);s.stop(t+dur);return s}
+  function filt(type,f,q=0.7){const b=ac.createBiquadFilter();b.type=type;b.frequency.value=f;b.Q.value=q;return b}
+  function osc(type,f,t,dur){const o=ac.createOscillator();o.type=type;o.frequency.value=f;o.start(t);o.stop(t+dur);return o}
+  const kick=(t,v=1)=>{const o=osc('sine',170,t,0.6);o.frequency.setValueAtTime(170,t);o.frequency.exponentialRampToValueAtTime(48,t+0.11);o.frequency.exponentialRampToValueAtTime(38,t+0.45);
+    const g=ac.createGain();env(g,t,0.002,v,0.45);o.connect(g);out(g);
+    const n=nz(t,0.03),g2=ac.createGain();env(g2,t,0.001,0.3*v,0.018);n.connect(filt('highpass',2500)).connect(g2);out(g2);
+    duck.gain.setValueAtTime(0.35,t);duck.gain.linearRampToValueAtTime(1,t+0.22)};
+  const clap=(t,v=0.5)=>{const n=nz(t,0.3),b=filt('bandpass',1300,0.9),g=ac.createGain();g.gain.setValueAtTime(0,t);
+    for(const o of [0,0.011,0.022]){g.gain.setValueAtTime(v,t+o);g.gain.exponentialRampToValueAtTime(0.05,t+o+0.009)}
+    g.gain.setValueAtTime(v*0.8,t+0.032);g.gain.exponentialRampToValueAtTime(0.0001,t+0.25);n.connect(b).connect(g);out(g,0.05,0.35)};
+  const hat=(t,open,v,pan=0.2)=>{const n=nz(t,0.25),g=ac.createGain();env(g,t,0.001,v,open?0.16:0.035);n.connect(filt('highpass',7500)).connect(g);out(g,pan,0.1)};
+  const bass=(t,f,d,v=0.3)=>{const o=osc('sawtooth',f,t,d+0.1),lp=filt('lowpass',300,4),g=ac.createGain();
+    lp.frequency.setValueAtTime(2200,t);lp.frequency.exponentialRampToValueAtTime(260,t+d);env(g,t,0.004,v,d);o.connect(lp).connect(g);out(g,0,0,duck);
+    const s=osc('sine',f/2,t,d+0.1),gs=ac.createGain();env(gs,t,0.004,v*1.1,d);s.connect(gs);out(gs,0,0,duck)};
+  const stab=(t,notes,v=0.06)=>notes.forEach((n,i)=>[-9,9].forEach(dt=>{const o=osc('sawtooth',mf(n),t,0.5);o.detune.value=dt;
+    const lp=filt('lowpass',3000,1.2),g=ac.createGain();lp.frequency.setValueAtTime(3200,t);lp.frequency.exponentialRampToValueAtTime(700,t+0.3);env(g,t,0.003,v,0.3);o.connect(lp).connect(g);out(g,(i-1)*0.45+dt/40,0.4,duck)}));
+  const pad=(t0,t1,notes,v=0.035)=>notes.forEach((n,i)=>[-12,12].forEach(dt=>{const o=osc('sawtooth',mf(n),t0,t1-t0+0.6);o.detune.value=dt;
+    const lp=filt('lowpass',1000,0.6),g=ac.createGain();g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(v,t0+0.5);g.gain.setValueAtTime(v,t1);g.gain.linearRampToValueAtTime(0,t1+0.5);
+    o.connect(lp).connect(g);out(g,(i%2?0.5:-0.5)*(dt>0?1:-1),0.6,duck)}));
+  const whoosh=(t0,t1,f0,f1,v=0.3,p0=-0.7,p1=0.7)=>{const n=nz(t0,t1-t0+0.05),b=filt('bandpass',f0,1.6),g=ac.createGain(),p=ac.createStereoPanner();
+    b.frequency.setValueAtTime(f0,t0);b.frequency.exponentialRampToValueAtTime(f1,t1);g.gain.setValueAtTime(0,t0);g.gain.linearRampToValueAtTime(v,t0+(t1-t0)*0.75);g.gain.exponentialRampToValueAtTime(0.0001,t1);
+    p.pan.setValueAtTime(p0,t0);p.pan.linearRampToValueAtTime(p1,t1);n.connect(b).connect(g).connect(p);p.connect(bus);const s=ac.createGain();s.gain.value=0.3;p.connect(s);s.connect(verb)};
+  const riser=(t0,t1,v=0.25)=>{const n=nz(t0,t1-t0),hp=filt('highpass',300,2),g=ac.createGain();hp.frequency.setValueAtTime(300,t0);hp.frequency.exponentialRampToValueAtTime(9000,t1);
+    g.gain.setValueAtTime(0.0001,t0);g.gain.exponentialRampToValueAtTime(v,t1-0.01);g.gain.linearRampToValueAtTime(0,t1);n.connect(hp).connect(g);out(g,0,0.3);
+    const o=osc('sawtooth',110,t0,t1-t0),go=ac.createGain();o.frequency.setValueAtTime(110,t0);o.frequency.exponentialRampToValueAtTime(880,t1);
+    go.gain.setValueAtTime(0.0001,t0);go.gain.exponentialRampToValueAtTime(v*0.25,t1-0.01);go.gain.linearRampToValueAtTime(0,t1);o.connect(filt('lowpass',2500)).connect(go);out(go,0,0.3)};
+  const boom=(t,v=0.8,d=1.6)=>{const o=osc('sine',70,t,d+0.2),g=ac.createGain();o.frequency.setValueAtTime(70,t);o.frequency.exponentialRampToValueAtTime(28,t+d);env(g,t,0.005,v,d);o.connect(g);out(g)};
+  const crash=(t,v=0.3,d=1.4)=>{const n=nz(t,d+0.1),g=ac.createGain();env(g,t,0.002,v,d);n.connect(filt('highpass',2800)).connect(g);out(g,0,0.6)};
+  const blip=(t,f,v=0.08,type='triangle',d=0.09,pan=0)=>{const o=osc(type,f,t,d+0.05),g=ac.createGain();env(g,t,0.002,v,d);o.connect(g);out(g,pan,0.3)};
+  const bell=(t,f,v=0.12)=>[[1,1,1.8],[2.76,.45,1],[5.4,.22,.6],[8.93,.1,.3]].forEach(([r,a,d])=>{const o=osc('sine',f*r,t,d+0.1),g=ac.createGain();env(g,t,0.002,v*a,d);o.connect(g);out(g,0,0.6)});
+  const tick=(t,v=0.12)=>{const n=nz(t,0.02),g=ac.createGain();env(g,t,0.001,v,0.012);n.connect(filt('bandpass',4200,2)).connect(g);out(g,(R()-.5)*0.6)};
+  // new: block placement, roar, bonk, dizzy tweets
+  const place=(t,n,v=0.14)=>{const s=nz(t,0.08),g=ac.createGain();env(g,t,0.001,v,0.05);s.connect(filt('bandpass',650,1.4)).connect(g);out(g,(R()-.5)*0.8);blip(t,mf(n),0.035,'triangle',0.06,(R()-.5)*0.6)};
+  const roar=t=>{const o=osc('sawtooth',80,t,0.95),l=osc('sine',9,t,0.95),lg=ac.createGain();lg.gain.value=10;l.connect(lg).connect(o.frequency);
+    o.frequency.setValueAtTime(70,t);o.frequency.linearRampToValueAtTime(125,t+0.25);o.frequency.linearRampToValueAtTime(78,t+0.85);
+    const g=ac.createGain();g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(0.32,t+0.08);g.gain.setValueAtTime(0.32,t+0.5);g.gain.exponentialRampToValueAtTime(0.0001,t+0.9);
+    o.connect(filt('lowpass',1100,2)).connect(g);out(g,0,0.4);
+    const n=nz(t,0.9),gn=ac.createGain();gn.gain.setValueAtTime(0,t);gn.gain.linearRampToValueAtTime(0.18,t+0.1);gn.gain.exponentialRampToValueAtTime(0.0001,t+0.85);n.connect(filt('bandpass',520,0.8)).connect(gn);out(gn,0,0.4)};
+  const bonk=t=>{kick(t,1.25);const n=nz(t,0.12),g=ac.createGain();env(g,t,0.001,0.55,0.08);n.connect(filt('bandpass',1050,5)).connect(g);out(g,0,0.2);
+    const o=osc('sine',1100,t,0.3),go=ac.createGain();o.frequency.setValueAtTime(1100,t);o.frequency.exponentialRampToValueAtTime(160,t+0.2);env(go,t,0.002,0.22,0.22);o.connect(go);out(go,0,0.3);crash(t,0.07,0.4)};
+  const tweet=t=>{for(let k=0;k<3;k++){const s=t+k*0.11,o=osc('sine',2400,s,0.1),g=ac.createGain();o.frequency.setValueAtTime(2400,s);o.frequency.exponentialRampToValueAtTime(3500,s+0.06);env(g,s,0.003,0.045,0.06);o.connect(g);out(g,k%2?0.5:-0.5,0.3)}};
+
+  // bar 1 — the island pops up
+  boom(0.01,0.45,1.3);pad(0,1.9,[45,57,60,64,67,71],0.03);whoosh(0,0.6,200,2200,0.16);
+  for(let i=0;i<12;i++)place(0.12+i*0.075,60+i*2,0.1);
+  bell(1.15,mf(84),0.05);riser(1.0,1.875,0.2);whoosh(1.6,1.9,500,6000,0.28,-0.9,0.9);
+  // bars 2–7 — the reel's groove, unchanged
+  const chords=[[57,60,64],[53,57,60],[55,60,64],[55,59,62],[57,60,64],[53,57,60]],roots=[45,41,48,43,45,41];
+  for(let b=1;b<=6;b++){
+    const t0=b*BAR,ch=chords[b-1],rt=roots[b-1];
+    for(let k=0;k<4;k++){
+      kick(t0+k*BEAT,b==1&&k==0?1.15:1);if(k%2)clap(t0+k*BEAT);
+      hat(t0+(k+0.5)*BEAT,true,0.09,0.25);for(const s of [0.25,0.75])hat(t0+(k+s)*BEAT,false,0.045,-0.3);
+      bass(t0+(k+0.5)*BEAT,mf(rt),0.19);if(k%2)bass(t0+(k+0.75)*BEAT,mf(rt+12),0.1,0.2);
+    }
+    if(b<6){stab(t0,ch.map(n=>n+12));stab(t0+1.5*BEAT,ch.map(n=>n+12),0.045);stab(t0+2.75*BEAT,ch.map(n=>n+12),0.045)}
+  }
+  // dino assembles: a placement click on every 16th, climbing in pitch
+  for(let t=1.95,i=0;t<6.7;t+=BEAT/4,i++)place(t,52+floor(i/3),0.12);
+  [0,1,2].forEach(i=>bell(6.74+i*0.05,mf([88,91,96][i]),0.06));roar(6.95);
+  blip(7.75,mf(100),0.04,'sine',0.05);blip(8.85,mf(100),0.04,'sine',0.05);
+  // hammer assembles: metallic clicks + whoosh
+  whoosh(7.5,8.4,300,2600,0.2,0.9,0);for(let t=7.62,i=0;t<9.0;t+=BEAT/4,i++)place(t,64+i,0.1);
+  for(const h of HITS){whoosh(h-0.24,h,250,2600,0.22,0.6,-0.2);if(h<FINAL){bonk(h);tweet(h+0.18)}}
+  // bar 7 — snare roll + riser into the finale, exactly like the reel
+  for(let k=0;k<16;k++){const t=6*BAR+(k<4?k*BEAT/2:k<8?2*BEAT+(k-4)*BEAT/4:3*BEAT+(k-8)*BEAT/8);clap(t,0.1+0.25*k/16)}
+  riser(6*BAR,7*BAR,0.3);
+  // bar 8 — БАБАХ, the blocks scatter and come back, title
+  kick(FINAL,1.4);boom(FINAL,0.95,2.0);crash(FINAL,0.34,1.6);bonk(FINAL);
+  {const n=nz(FINAL,1.2),g=ac.createGain();env(g,FINAL,0.01,0.45,1.0);n.connect(filt('lowpass',320)).connect(g);out(g)}
+  for(let i=0;i<18;i++)tick(FINAL+0.08+R()*0.6,0.1);
+  whoosh(13.55,14.25,3000,300,0.22,0.7,-0.7);for(let t=13.62,i=0;t<14.5;t+=BEAT/8,i++)place(t,57+i,0.09);
+  pad(14.0,DUR-0.3,[45,52,57,60,64,71],0.04);bass(14.05,mf(45),1.0,0.22);
+  [0,1,2,3].forEach(i=>bell(14.05+i*0.07,mf([81,84,88,93][i]),0.07));
+  return ac.startRendering();
+}
+function wavB64(buf){
+  const n=buf.length,sr=buf.sampleRate,ab=new ArrayBuffer(44+n*4),dv=new DataView(ab),ws=(o,s)=>[...s].forEach((c,i)=>dv.setUint8(o+i,c.charCodeAt(0)));
+  ws(0,'RIFF');dv.setUint32(4,36+n*4,true);ws(8,'WAVE');ws(12,'fmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,2,true);
+  dv.setUint32(24,sr,true);dv.setUint32(28,sr*4,true);dv.setUint16(32,4,true);dv.setUint16(34,16,true);ws(36,'data');dv.setUint32(40,n*4,true);
+  const L=buf.getChannelData(0),Rr=buf.getChannelData(1);
+  for(let i=0;i<n;i++){dv.setInt16(44+i*4,clamp(L[i],-1,1)*32767,true);dv.setInt16(46+i*4,clamp(Rr[i],-1,1)*32767,true)}
+  const u8=new Uint8Array(ab);let s='';for(let i=0;i<u8.length;i+=0x8000)s+=String.fromCharCode.apply(null,u8.subarray(i,i+0x8000));return btoa(s);
+}
+
+/* ============================================================ entry points */
+window.frameAt=(t,sub)=>{frame(t,sub);return out.canvas.toDataURL('image/png')};
+window.audioWav=async()=>wavB64(await buildAudio());
+window.VIDEO={width:W,height:H,fps:FPS,duration:DUR};
+window.READY=true;
+const btn=document.getElementById('play');
+if(location.search.includes('render'))btn.remove();
+else{
+  frame(DUR-0.01);
+  btn.onclick=async()=>{
+    btn.textContent='ГОТОВЛЮ ЗВУК…';
+    const buf=await buildAudio(),ac=new AudioContext(),src=ac.createBufferSource();src.buffer=buf;src.connect(ac.destination);
+    btn.style.display='none';const t0=ac.currentTime+0.05;src.start(t0);
+    const loop=()=>{const t=ac.currentTime-t0;if(t<DUR){frame(max(0,t));requestAnimationFrame(loop)}else{btn.style.display='';btn.textContent='↻ ЕЩЁ РАЗ'}};loop();
+  };
+}
+</script>
+</body>
+</html>

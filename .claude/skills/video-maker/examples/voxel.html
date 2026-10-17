@@ -1,0 +1,81 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>voxel</title>
+<style>html,body{margin:0;background:#000}canvas{display:block;max-width:100vw;height:auto}</style></head>
+<body>
+<script type="module">
+// Шаблон воксельного ролика на engine.js + voxel.js: слово из кубиков собирается по долям, в отверстии «А»
+// загорается экран (порядок слоёв: фон → дальние кубы → портал → слово), слово разлетается, финальная надпись.
+import { createVideo, grid, P, E, rng, canvas, pixText, bloom } from '/skill/engine.js';
+import { orbit, keys, shake, floorGrid, horizonY, textModel, seedFlight, seedBurst, assemble, explode, emit, drawCubes, palette, quadAt, floorGlow, axAng, sc3, I3 } from '/skill/voxel.js';
+const W = 1920, H = 1080, DUR = 8, FY = -8.5;
+const g = grid(120), BEAT = g.beat, at = g.at;
+const LOCK = [0, 1, 2, 3].map(k => 1 + k * 0.5), BOOM = at(3);   // буквы встают на доли 2–5, взрыв на такт 3
+
+const COLORS = { И: '#FF3B5C', Г: '#FFB000', Р: '#2EE66B', А: '#2FA8FF', amb: '#B05CFF' };
+const PAL = palette(COLORS);
+const WORD = textModel('ИГРА', { x0: -25, y0: -1, mat: ch => ch });
+WORD.forEach((L, k) => { seedFlight(L, { seed: 10 + k, start: LOCK[k] - 1.5, end: LOCK[k], order: (v, R) => R() }); seedBurst(L, { seed: 20 + k }); });
+const A = WORD[3], HOLE = { x0: A.x0 + 1.5, x1: A.x0 + 7.5, y0: -1 + 7.5, y1: -1 + 11.5 };
+const AMB = Array.from({ length: 30 }, (_, i) => { const R = rng(300 + i); return { p: [(R() * 2 - 1) * 90, -3 + R() * 40, -35 - R() * 80], s: 0.8 + R() * 2, ax: [R() - .5, R() - .5, R() - .5], sp: (R() - .5) * 1.2 }; });
+AMB.forEach(a => { const l = Math.hypot(...a.ax); a.ax = a.ax.map(v => v / l); });
+
+const KEYS = [[0, -25, 8, 60, [-2, 5, 0]], [at(3), 8, 6, 72, [0, 5, 0]], [DUR, 14, 9, 70, [0, 5, 0]]];
+const camAt = t => orbit({ ...keys(KEYS, t), f: 1800 * (1 + 0.012 * g.pulse(t, 10) * (t >= at(1) && t < at(3))), shake: shake(t, [...LOCK.map(x => [x, 7]), [BOOM, 16]]) });
+
+const SCREEN = canvas(160, 90).getContext('2d');
+function screen(t) {   // мини-игра в отверстии: бегущие полосы и надпись
+  const c = SCREEN; c.fillStyle = '#0B1030'; c.fillRect(0, 0, 160, 90);
+  for (let i = 0; i < 12; i++) { c.fillStyle = ['#FF3B5C', '#FFB000', '#2EE66B', '#2FA8FF'][i % 4]; c.fillRect(((i * 23 - t * 90) % 276 + 276) % 276 - 20, 60 + (i % 3) * 8, 14, 5); }
+  pixText(c, 'GO!', 80, 20, 4, '#FFE14D', { align: 'center', shadow: '#B0153E' });
+  return c.canvas;
+}
+
+function draw(ctx, t) {
+  const cam = camAt(t);
+  // 1. фон: небо, горизонт, сетка пола
+  const hy = horizonY(cam, FY), gr = ctx.createLinearGradient(0, 0, 0, hy); gr.addColorStop(0, '#05021A'); gr.addColorStop(1, '#3A0B52');
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, W, hy); ctx.fillStyle = '#0B0322'; ctx.fillRect(0, hy, W, H - hy);
+  floorGrid(ctx, cam, t, { y: FY });
+  WORD.forEach((L, k) => floorGlow(ctx, cam, [L.center[0], FY, 0], 9, COLORS[L.ch], 0.45 * P(t, LOCK[k] - 0.5, LOCK[k]) * (1 - P(t, BOOM, BOOM + 0.5))));
+  // 2. дальний слой: декоративные кубики (все за словом)
+  const far = AMB.map(a => ({ c: [a.p[0], a.p[1] + Math.sin(t * 0.7 + a.p[0]) * 1.5, a.p[2]], M: sc3(axAng(a.ax, t * a.sp + a.p[1]), a.s * E.outBack(P(t, 0, 0.6))), m: 'amb', j: -0.1, cull: 0 }));
+  drawCubes(ctx, far, cam, PAL);
+  // 3. портал в отверстии «А» — после дальнего слоя, до слова (стенки отверстия лягут поверх краёв)
+  const pa = P(t, at(1, 3), at(2)) * (1 - P(t, BOOM - 0.1, BOOM));
+  const q = pa > 0 && quadAt(cam, HOLE.x0, HOLE.x1, HOLE.y0, HOLE.y1, 1.5);
+  if (q) {
+    ctx.save(); ctx.beginPath(); q.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1])); ctx.closePath(); ctx.clip();
+    const xs = q.map(p => p[0]), ys = q.map(p => p[1]), x0 = Math.min(...xs), y0 = Math.min(...ys);
+    ctx.globalAlpha = pa; ctx.imageSmoothingEnabled = false; ctx.drawImage(screen(t), x0, y0, Math.max(...xs) - x0, Math.max(...ys) - y0); ctx.restore();
+  }
+  // 4. ближний слой: слово — сборка, поп на фиксации, прыжок волной, разлёт
+  const near = [];
+  WORD.forEach((L, k) => {
+    const lt = t - LOCK[k], s = 1 + (lt >= 0 ? 0.16 * Math.exp(-lt * 7) * Math.cos(lt * 16) : 0);
+    const jt = t - (at(2) + k * BEAT / 2), dy = jt >= 0 && jt < 0.4 ? 2.2 * Math.sin(Math.PI * jt / 0.4) : 0, C = L.center;
+    emit(L, near, v => {
+      const home = [C[0] + (v.h[0] - C[0]) * s, C[1] + (v.h[1] - C[1]) * s + dy, C[2] + (v.h[2] - C[2]) * s];
+      return t >= BOOM ? [explode(v, t - BOOM, home), false] : assemble(v, t, home, sc3(I3, s));
+    });
+  });
+  drawCubes(ctx, near, cam, PAL);
+  // 5. финальная надпись
+  if (t > BOOM + 0.5) { ctx.globalAlpha = P(t, BOOM + 0.5, BOOM + 0.65); pixText(ctx, 'ГОТОВО!', W / 2, H / 2 - 70, 20, '#FFE14D', { align: 'center', shadow: '#FF2E88' }); ctx.globalAlpha = 1; }
+}
+function post(ctx, t) {
+  bloom(ctx, { alpha: 0.4 });
+  let fl = 0; for (const [x, a] of [...LOCK.map(x => [x, 0.3]), [BOOM, 0.7]]) if (t >= x) fl = Math.max(fl, a * Math.exp(-(t - x) / 0.08));
+  if (fl > 0.004) { ctx.fillStyle = `rgba(255,245,255,${fl})`; ctx.fillRect(0, 0, W, H); }
+}
+async function audio(A) {
+  A.boom(0.02, 0.6, 1.6); A.pad(0, at(1), [45, 57, 60, 64], 0.03); A.riser(0.4, at(1), 0.2);
+  A.groove(g, [1, 2]); A.groove(g, [3], { stabs: false, shift: 2 });
+  for (let b = 1; b < 4; b++) for (let i = 0; i < 16; i++) { const ch = [[57, 60, 64], [53, 57, 60], [55, 60, 64]][b - 1]; A.tone(at(b) + i * BEAT / 4, A.mf(ch[i % 3] + 24), 0.09, 0.04, { lp: 3500, pan: i % 2 ? 0.3 : -0.3 }); }
+  LOCK.forEach((L, k) => { A.crash(L, 0.15, 1); [0, 4, 7, 12].forEach((d, i) => A.tone(L + i * 0.035, A.mf(69 + k * 3 + d), 0.09, 0.035)); });
+  A.tone(at(1, 3), 300, 0.2, 0.03, { f1: 1200, vib: 0.01 });
+  A.boom(BOOM, 0.8, 1.4); A.noise(BOOM, 0.6, 0.3, { f: 2500, f1: 150 }); A.tone(BOOM, 900, 0.4, 0.04, { f1: 60 }); A.crash(BOOM, 0.25, 1.4);
+  A.pad(BOOM + 0.4, DUR - 0.3, [45, 52, 57, 64], 0.035); [0, 1, 2].forEach(i => A.bell(BOOM + 0.5 + i * 0.07, A.mf([81, 84, 88][i]), 0.06));
+}
+createVideo({ width: W, height: H, fps: 30, duration: DUR, background: '#05021A', draw, post, audio });
+</script>
+</body></html>
